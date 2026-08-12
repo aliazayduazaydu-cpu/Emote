@@ -1,0 +1,465 @@
+--// 🌈 شك بوينت - MOBILE PRO
+--// LocalScript
+--// StarterPlayer > StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local Player = Players.LocalPlayer
+
+local Character
+local Humanoid
+local RootPart
+
+local CheckPoint = nil
+local CheckPointSaved = false
+local MenuOpen = false
+local RainbowTime = 0
+
+--==================================================
+-- CHARACTER
+--==================================================
+
+local function SetupCharacter(Char)
+	Character = Char
+	Humanoid = Char:WaitForChild("Humanoid", 10)
+	RootPart = Char:WaitForChild("HumanoidRootPart", 10)
+
+	if CheckPointSaved and CheckPoint then
+		task.wait(0.4)
+
+		if RootPart then
+			RootPart.CFrame = CheckPoint + Vector3.new(0, 3, 0)
+		end
+	end
+end
+
+if Player.Character then
+	task.spawn(SetupCharacter, Player.Character)
+end
+
+Player.CharacterAdded:Connect(SetupCharacter)
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "CheckPointGUI"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = Player:WaitForChild("PlayerGui")
+
+--==================================================
+-- OPEN / CLOSE BUTTON
+--==================================================
+
+local OpenButton = Instance.new("TextButton")
+OpenButton.Name = "OpenButton"
+OpenButton.Size = UDim2.fromOffset(58, 58)
+OpenButton.Position = UDim2.new(0, 18, 0.5, -29)
+OpenButton.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+OpenButton.Text = "+"
+OpenButton.TextColor3 = Color3.new(1,1,1)
+OpenButton.TextSize = 32
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.AutoButtonColor = false
+OpenButton.Parent = Gui
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius = UDim.new(1,0)
+OpenCorner.Parent = OpenButton
+
+local OpenStroke = Instance.new("UIStroke")
+OpenStroke.Thickness = 2.5
+OpenStroke.Parent = OpenButton
+
+local OpenScale = Instance.new("UIScale")
+OpenScale.Parent = OpenButton
+
+--==================================================
+-- MAIN
+--==================================================
+
+local Main = Instance.new("Frame")
+Main.Name = "CheckPointMenu"
+Main.Size = UDim2.fromOffset(275, 280)
+Main.Position = UDim2.new(0.5, -137, 0.5, -140)
+Main.BackgroundColor3 = Color3.fromRGB(17,17,23)
+Main.BorderSizePixel = 0
+Main.Visible = false
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0,18)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0.15
+MainStroke.Parent = Main
+
+local MainScale = Instance.new("UIScale")
+MainScale.Scale = 0.75
+MainScale.Parent = Main
+
+--==================================================
+-- HEADER
+--==================================================
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,62)
+Header.BackgroundColor3 = Color3.fromRGB(24,24,32)
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0,18)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.fromOffset(16,7)
+Title.Size = UDim2.new(1,-70,0,27)
+Title.Text = "🌈  شك بوينت"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 19
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.BackgroundTransparency = 1
+Subtitle.Position = UDim2.fromOffset(17,35)
+Subtitle.Size = UDim2.new(1,-70,0,18)
+Subtitle.Text = "نقطة رجوعك"
+Subtitle.TextColor3 = Color3.fromRGB(155,155,170)
+Subtitle.TextSize = 11
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = Header
+
+--==================================================
+-- CLOSE
+--==================================================
+
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.fromOffset(38,38)
+CloseButton.Position = UDim2.new(1,-48,0,12)
+CloseButton.BackgroundColor3 = Color3.fromRGB(45,45,55)
+CloseButton.Text = "×"
+CloseButton.TextColor3 = Color3.new(1,1,1)
+CloseButton.TextSize = 24
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.AutoButtonColor = false
+CloseButton.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0,12)
+CloseCorner.Parent = CloseButton
+
+--==================================================
+-- CONTENT
+--==================================================
+
+local Content = Instance.new("Frame")
+Content.BackgroundTransparency = 1
+Content.Position = UDim2.fromOffset(13,72)
+Content.Size = UDim2.new(1,-26,1,-84)
+Content.Parent = Main
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0,9)
+Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = Content
+
+--==================================================
+-- STATUS
+--==================================================
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1,0,0,29)
+Status.BackgroundColor3 = Color3.fromRGB(28,28,37)
+Status.Text = "●  لا يوجد شك بوينت"
+Status.TextColor3 = Color3.fromRGB(170,170,185)
+Status.TextSize = 12
+Status.Font = Enum.Font.GothamMedium
+Status.Parent = Content
+
+local StatusCorner = Instance.new("UICorner")
+StatusCorner.CornerRadius = UDim.new(0,10)
+StatusCorner.Parent = Status
+
+--==================================================
+-- BUTTON CREATOR
+--==================================================
+
+local function CreateButton(Text)
+
+	local Button = Instance.new("TextButton")
+	Button.Size = UDim2.new(1,0,0,45)
+	Button.BackgroundColor3 = Color3.fromRGB(31,31,41)
+	Button.Text = Text
+	Button.TextColor3 = Color3.new(1,1,1)
+	Button.TextSize = 13
+	Button.Font = Enum.Font.GothamBold
+	Button.AutoButtonColor = false
+	Button.Parent = Content
+
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0,12)
+	Corner.Parent = Button
+
+	local Stroke = Instance.new("UIStroke")
+	Stroke.Thickness = 1
+	Stroke.Transparency = 0.5
+	Stroke.Parent = Button
+
+	return Button, Stroke
+end
+
+--==================================================
+-- BUTTONS
+--==================================================
+
+local CheckButton, CheckStroke =
+	CreateButton("📍  شك بوينت")
+
+local TeleportButton, TeleportStroke =
+	CreateButton("🚀  انتقال إلى شك بوينت")
+
+local DeleteButton, DeleteStroke =
+	CreateButton("🗑️  حذف شك بوينت")
+
+--==================================================
+-- SAVE CHECK POINT
+--==================================================
+
+CheckButton.Activated:Connect(function()
+
+	if not RootPart then
+		Status.Text = "⚠  الشخصية غير جاهزة"
+		Status.TextColor3 = Color3.fromRGB(255,180,80)
+		return
+	end
+
+	CheckPoint = RootPart.CFrame
+	CheckPointSaved = true
+
+	Status.Text = "●  تم حفظ شك بوينت"
+	Status.TextColor3 = Color3.fromRGB(80,255,145)
+
+	CheckButton.Text = "✅  تم حفظ شك بوينت"
+
+	task.wait(1)
+
+	CheckButton.Text = "📍  شك بوينت"
+end)
+
+--==================================================
+-- TELEPORT
+--==================================================
+
+TeleportButton.Activated:Connect(function()
+
+	if not CheckPointSaved or not CheckPoint then
+
+		Status.Text = "⚠  احفظ شك بوينت أولاً"
+		Status.TextColor3 = Color3.fromRGB(255,180,80)
+
+		return
+	end
+
+	if not RootPart then
+		return
+	end
+
+	RootPart.AssemblyLinearVelocity = Vector3.zero
+	RootPart.AssemblyAngularVelocity = Vector3.zero
+
+	RootPart.CFrame = CheckPoint + Vector3.new(0,3,0)
+
+	Status.Text = "🚀  تم الانتقال إلى شك بوينت"
+	Status.TextColor3 = Color3.fromRGB(100,200,255)
+
+	task.wait(0.8)
+
+	Status.Text = "●  شك بوينت محفوظ"
+	Status.TextColor3 = Color3.fromRGB(80,255,145)
+end)
+
+--==================================================
+-- DELETE
+--==================================================
+
+DeleteButton.Activated:Connect(function()
+
+	CheckPoint = nil
+	CheckPointSaved = false
+
+	Status.Text = "●  لا يوجد شك بوينت"
+	Status.TextColor3 = Color3.fromRGB(170,170,185)
+
+	CheckButton.Text = "📍  شك بوينت"
+end)
+
+--==================================================
+-- DRAG FUNCTION
+--==================================================
+
+local function MakeDraggable(Object, Handle)
+
+	local Dragging = false
+	local DragStart
+	local StartPosition
+
+	Handle.InputBegan:Connect(function(Input)
+
+		if Input.UserInputType == Enum.UserInputType.MouseButton1
+		or Input.UserInputType == Enum.UserInputType.Touch then
+
+			Dragging = true
+			DragStart = Input.Position
+			StartPosition = Object.Position
+
+			Input.Changed:Connect(function()
+
+				if Input.UserInputState == Enum.UserInputState.End then
+					Dragging = false
+				end
+			end)
+		end
+	end)
+
+	Handle.InputChanged:Connect(function(Input)
+
+		if not Dragging then
+			return
+		end
+
+		if Input.UserInputType == Enum.UserInputType.MouseMovement
+		or Input.UserInputType == Enum.UserInputType.Touch then
+
+			local Delta = Input.Position - DragStart
+
+			Object.Position = UDim2.new(
+				StartPosition.X.Scale,
+				StartPosition.X.Offset + Delta.X,
+				StartPosition.Y.Scale,
+				StartPosition.Y.Offset + Delta.Y
+			)
+		end
+	end)
+end
+
+-- زر الفتح نفسه يتحرك
+MakeDraggable(OpenButton, OpenButton)
+
+-- القائمة تتحرك من العنوان
+MakeDraggable(Main, Header)
+
+--==================================================
+-- OPEN / CLOSE
+--==================================================
+
+local function OpenMenu()
+
+	MenuOpen = true
+	Main.Visible = true
+	MainScale.Scale = 0.75
+
+	TweenService:Create(
+		MainScale,
+		TweenInfo.new(
+			0.25,
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.Out
+		),
+		{Scale = 1}
+	):Play()
+
+	TweenService:Create(
+		OpenScale,
+		TweenInfo.new(0.12),
+		{Scale = 0.9}
+	):Play()
+
+	task.wait(0.08)
+
+	OpenButton.Text = "×"
+
+	TweenService:Create(
+		OpenScale,
+		TweenInfo.new(0.12),
+		{Scale = 1}
+	):Play()
+end
+
+local function CloseMenu()
+
+	MenuOpen = false
+
+	TweenService:Create(
+		MainScale,
+		TweenInfo.new(0.15),
+		{Scale = 0.75}
+	):Play()
+
+	task.wait(0.12)
+
+	Main.Visible = false
+	OpenButton.Text = "+"
+end
+
+OpenButton.Activated:Connect(function()
+
+	if MenuOpen then
+		CloseMenu()
+	else
+		OpenMenu()
+	end
+end)
+
+CloseButton.Activated:Connect(function()
+
+	if MenuOpen then
+		CloseMenu()
+	end
+end)
+
+--==================================================
+-- RAINBOW
+--==================================================
+
+RunService.RenderStepped:Connect(function(Delta)
+
+	RainbowTime += Delta * 0.35
+
+	local Color1 = Color3.fromHSV(
+		RainbowTime % 1,
+		0.9,
+		1
+	)
+
+	local Color2 = Color3.fromHSV(
+		(RainbowTime + 0.35) % 1,
+		0.8,
+		1
+	)
+
+	OpenStroke.Color = Color1
+	MainStroke.Color = Color2
+	CheckStroke.Color = Color1
+
+	OpenButton.BackgroundColor3 =
+		Color3.fromHSV(
+			(RainbowTime + 0.5) % 1,
+			0.65,
+			0.28
+		)
+end)
+
+print("🌈 شك بوينت جاهز!")
