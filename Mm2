@@ -1,0 +1,799 @@
+--// MM2 STYLE MOBILE TEST PANEL
+--// For your own Roblox experience / testing
+--//
+--// 🔴 Murder ESP
+--// 🔵 Sheriff ESP
+--// 🟢 Innocent ESP
+--// 🟡 Pickup Gun ESP
+--// 🔫 Take Gun
+--// 🎯 Fast Smooth Aim Murder
+--// 📱 Mobile Movable UI
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+local ESPEnabled = false
+local AimEnabled = false
+
+local ESPObjects = {}
+
+local CurrentGun = nil
+local GunHighlight = nil
+local GunBillboard = nil
+
+local MurderColor = Color3.fromRGB(255,40,40)
+local SheriffColor = Color3.fromRGB(40,120,255)
+local InnocentColor = Color3.fromRGB(40,255,70)
+
+local GunColor = Color3.fromRGB(255,255,0)
+local GunOutline = Color3.fromRGB(255,120,0)
+
+--==================================================
+-- ROLE
+--==================================================
+
+local function GetRole(player)
+
+    local character = player.Character
+
+    if character then
+        if character:FindFirstChild("Knife") then
+            return "Murder"
+        end
+
+        if character:FindFirstChild("Gun") then
+            return "Sheriff"
+        end
+    end
+
+    local backpack = player:FindFirstChild("Backpack")
+
+    if backpack then
+        if backpack:FindFirstChild("Knife") then
+            return "Murder"
+        end
+
+        if backpack:FindFirstChild("Gun") then
+            return "Sheriff"
+        end
+    end
+
+    return "Innocent"
+end
+
+local function RoleColor(role)
+
+    if role == "Murder" then
+        return MurderColor
+    elseif role == "Sheriff" then
+        return SheriffColor
+    end
+
+    return InnocentColor
+end
+
+--==================================================
+-- PLAYER ESP
+--==================================================
+
+local function RemoveESP(player)
+
+    if not ESPObjects[player] then
+        return
+    end
+
+    for _, object in ipairs(ESPObjects[player]) do
+        if object and object.Parent then
+            object:Destroy()
+        end
+    end
+
+    ESPObjects[player] = nil
+end
+
+local function CreateESP(player)
+
+    if player == LocalPlayer then
+        return
+    end
+
+    local character = player.Character
+
+    if not character then
+        return
+    end
+
+    local head = character:FindFirstChild("Head")
+
+    if not head then
+        return
+    end
+
+    RemoveESP(player)
+
+    local role = GetRole(player)
+    local color = RoleColor(role)
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "RoleESP"
+    highlight.Adornee = character
+    highlight.FillColor = color
+    highlight.OutlineColor = color
+    highlight.FillTransparency = 0.55
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = character
+
+    local nameGui = Instance.new("BillboardGui")
+    nameGui.Name = "SmallName"
+    nameGui.Adornee = head
+    nameGui.Size = UDim2.new(0,100,0,24)
+    nameGui.StudsOffset = Vector3.new(0,2.6,0)
+    nameGui.AlwaysOnTop = true
+    nameGui.Parent = character
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Size = UDim2.fromScale(1,1)
+    nameLabel.Text = player.Name
+    nameLabel.TextColor3 = color
+    nameLabel.TextStrokeColor3 = Color3.new(0,0,0)
+    nameLabel.TextStrokeTransparency = 0.15
+    nameLabel.TextSize = 12
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.Parent = nameGui
+
+    ESPObjects[player] = {
+        highlight,
+        nameGui
+    }
+end
+
+local function UpdateESP()
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+
+            if ESPEnabled then
+                CreateESP(player)
+            else
+                RemoveESP(player)
+            end
+
+        end
+    end
+end
+
+--==================================================
+-- FIND GUN
+--==================================================
+
+local function FindGun()
+
+    for _, object in ipairs(workspace:GetDescendants()) do
+
+        if object:IsA("Tool") then
+
+            if object.Name:lower():find("gun") then
+                return object
+            end
+
+        end
+
+        if object.Name == "GunDrop"
+        or object.Name == "Gun" then
+
+            if object:IsA("BasePart")
+            or object:IsA("Model") then
+
+                return object
+            end
+        end
+    end
+
+    return nil
+end
+
+--==================================================
+-- CHECK PICKUP
+--==================================================
+
+local function IsPickupGun(gun)
+
+    if not gun then
+        return false
+    end
+
+    if gun:IsA("Tool") then
+        return gun.Enabled ~= false
+    end
+
+    if gun:FindFirstChildOfClass(
+        "ProximityPrompt",
+        true
+    ) then
+        return true
+    end
+
+    if gun:FindFirstChild(
+        "TouchInterest",
+        true
+    ) then
+        return true
+    end
+
+    return false
+end
+
+--==================================================
+-- GUN PART
+--==================================================
+
+local function GetGunPart(gun)
+
+    if not gun then
+        return nil
+    end
+
+    if gun:IsA("BasePart") then
+        return gun
+    end
+
+    if gun:IsA("Model") then
+
+        return gun.PrimaryPart
+            or gun:FindFirstChildWhichIsA(
+                "BasePart"
+            )
+    end
+
+    if gun:IsA("Tool") then
+
+        return gun:FindFirstChildWhichIsA(
+            "BasePart"
+        )
+    end
+
+    return nil
+end
+
+local function GetGunPosition(gun)
+
+    local part = GetGunPart(gun)
+
+    if part then
+        return part.Position
+    end
+
+    return nil
+end
+
+--==================================================
+-- GUN ESP REMOVE
+--==================================================
+
+local function RemoveGunESP()
+
+    if GunHighlight then
+        GunHighlight:Destroy()
+        GunHighlight = nil
+    end
+
+    if GunBillboard then
+        GunBillboard:Destroy()
+        GunBillboard = nil
+    end
+end
+
+--==================================================
+-- GUN ESP
+--==================================================
+
+local function UpdateGunESP()
+
+    local gun = FindGun()
+
+    if not IsPickupGun(gun) then
+
+        RemoveGunESP()
+        CurrentGun = nil
+
+        return
+    end
+
+    if gun == CurrentGun then
+        return
+    end
+
+    RemoveGunESP()
+
+    CurrentGun = gun
+
+    local highlight = Instance.new("Highlight")
+
+    highlight.Name = "PickupGunESP"
+    highlight.FillColor = GunColor
+    highlight.OutlineColor = GunOutline
+    highlight.FillTransparency = 0.10
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode =
+        Enum.HighlightDepthMode.AlwaysOnTop
+
+    highlight.Adornee = gun
+    highlight.Parent = gun
+
+    GunHighlight = highlight
+
+    local part = GetGunPart(gun)
+
+    if part then
+
+        local gui = Instance.new("BillboardGui")
+
+        gui.Name = "GunHere"
+        gui.Adornee = part
+        gui.Size = UDim2.new(0,160,0,45)
+        gui.StudsOffset = Vector3.new(0,3.5,0)
+        gui.AlwaysOnTop = true
+        gui.Parent = gun
+
+        GunBillboard = gui
+
+        local label = Instance.new("TextLabel")
+
+        label.BackgroundTransparency = 1
+        label.Size = UDim2.fromScale(1,1)
+        label.Text = "🔫 سلاح هنا"
+        label.TextColor3 =
+            Color3.fromRGB(255,255,0)
+        label.TextStrokeColor3 =
+            Color3.new(0,0,0)
+        label.TextStrokeTransparency = 0
+        label.TextSize = 20
+        label.Font = Enum.Font.GothamBold
+        label.Parent = gui
+    end
+end
+
+--==================================================
+-- FIND MURDER
+--==================================================
+
+local function FindMurder()
+
+    for _, player in ipairs(Players:GetPlayers()) do
+
+        if player ~= LocalPlayer
+        and GetRole(player) == "Murder" then
+
+            local character = player.Character
+
+            if character then
+
+                local head =
+                    character:FindFirstChild("Head")
+
+                local humanoid =
+                    character:FindFirstChildOfClass(
+                        "Humanoid"
+                    )
+
+                if head
+                and humanoid
+                and humanoid.Health > 0 then
+
+                    return player
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+--==================================================
+-- FAST SMOOTH AIM MURDER
+--==================================================
+
+local function AimAtMurder()
+
+    if not AimEnabled then
+        return
+    end
+
+    local murder = FindMurder()
+
+    if not murder
+    or not murder.Character then
+        return
+    end
+
+    local head =
+        murder.Character:FindFirstChild("Head")
+
+    if not head then
+        return
+    end
+
+    local currentCFrame =
+        Camera.CFrame
+
+    local targetCFrame =
+        CFrame.lookAt(
+            currentCFrame.Position,
+            head.Position
+        )
+
+    -- سريع وناعم
+    Camera.CFrame =
+        currentCFrame:Lerp(
+            targetCFrame,
+            0.65
+        )
+end
+
+--==================================================
+-- GUI
+--==================================================
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MM2MobilePanel"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local Main = Instance.new("Frame")
+
+Main.Size = UDim2.new(0,205,0,235)
+Main.Position = UDim2.new(0.5,-102,0.5,-117)
+Main.BackgroundColor3 =
+    Color3.fromRGB(22,22,27)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = ScreenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,13)
+corner.Parent = Main
+
+--==================================================
+-- TITLE
+--==================================================
+
+local Title = Instance.new("TextLabel")
+
+Title.Size = UDim2.new(1,0,0,35)
+Title.BackgroundTransparency = 1
+Title.Text = "MM2 ESP"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextScaled = true
+Title.Font = Enum.Font.GothamBold
+Title.Parent = Main
+
+--==================================================
+-- ESP BUTTON
+--==================================================
+
+local ESPButton = Instance.new("TextButton")
+
+ESPButton.Size = UDim2.new(0.84,0,0,38)
+ESPButton.Position = UDim2.new(0.08,0,0,40)
+ESPButton.BackgroundColor3 =
+    Color3.fromRGB(180,40,40)
+ESPButton.Text = "ESP : OFF"
+ESPButton.TextColor3 = Color3.new(1,1,1)
+ESPButton.TextScaled = true
+ESPButton.Font = Enum.Font.GothamBold
+ESPButton.Parent = Main
+
+local espCorner = Instance.new("UICorner")
+espCorner.CornerRadius = UDim.new(0,9)
+espCorner.Parent = ESPButton
+
+--==================================================
+-- AIM BUTTON
+--==================================================
+
+local AimButton = Instance.new("TextButton")
+
+AimButton.Size = UDim2.new(0.84,0,0,38)
+AimButton.Position = UDim2.new(0.08,0,0,84)
+AimButton.BackgroundColor3 =
+    Color3.fromRGB(180,40,40)
+AimButton.Text = "🎯 Aim Murder : OFF"
+AimButton.TextColor3 = Color3.new(1,1,1)
+AimButton.TextScaled = true
+AimButton.Font = Enum.Font.GothamBold
+AimButton.Parent = Main
+
+local aimCorner = Instance.new("UICorner")
+aimCorner.CornerRadius = UDim.new(0,9)
+aimCorner.Parent = AimButton
+
+--==================================================
+-- GUN BUTTON
+--==================================================
+
+local GunButton = Instance.new("TextButton")
+
+GunButton.Size = UDim2.new(0.84,0,0,38)
+GunButton.Position = UDim2.new(0.08,0,0,128)
+GunButton.BackgroundColor3 =
+    Color3.fromRGB(55,120,220)
+GunButton.Text = "🔫 خذ السلاح"
+GunButton.TextColor3 = Color3.new(1,1,1)
+GunButton.TextScaled = true
+GunButton.Font = Enum.Font.GothamBold
+GunButton.Parent = Main
+
+local gunCorner = Instance.new("UICorner")
+gunCorner.CornerRadius = UDim.new(0,9)
+gunCorner.Parent = GunButton
+
+--==================================================
+-- STATUS
+--==================================================
+
+local Status = Instance.new("TextLabel")
+
+Status.Size = UDim2.new(1,0,0,55)
+Status.Position = UDim2.new(0,0,0,172)
+Status.BackgroundTransparency = 1
+
+Status.Text =
+    "🔴 Murder  🔵 Sheriff  🟢 Innocent"
+
+Status.TextColor3 =
+    Color3.fromRGB(220,220,220)
+
+Status.TextSize = 11
+Status.Font = Enum.Font.GothamBold
+Status.Parent = Main
+
+--==================================================
+-- ESP TOGGLE
+--==================================================
+
+ESPButton.MouseButton1Click:Connect(function()
+
+    ESPEnabled = not ESPEnabled
+
+    if ESPEnabled then
+
+        ESPButton.Text = "ESP : ON"
+        ESPButton.BackgroundColor3 =
+            Color3.fromRGB(40,180,70)
+
+        UpdateESP()
+
+    else
+
+        ESPButton.Text = "ESP : OFF"
+        ESPButton.BackgroundColor3 =
+            Color3.fromRGB(180,40,40)
+
+        for player in pairs(ESPObjects) do
+            RemoveESP(player)
+        end
+    end
+end)
+
+--==================================================
+-- AIM TOGGLE
+--==================================================
+
+AimButton.MouseButton1Click:Connect(function()
+
+    AimEnabled = not AimEnabled
+
+    if AimEnabled then
+
+        AimButton.Text =
+            "🎯 Aim Murder : ON"
+
+        AimButton.BackgroundColor3 =
+            Color3.fromRGB(40,180,70)
+
+        Status.Text =
+            "🎯 تتبع Murder بسرعة"
+
+    else
+
+        AimButton.Text =
+            "🎯 Aim Murder : OFF"
+
+        AimButton.BackgroundColor3 =
+            Color3.fromRGB(180,40,40)
+
+        Status.Text =
+            "🔴 Murder  🔵 Sheriff  🟢 Innocent"
+    end
+end)
+
+--==================================================
+-- TAKE GUN
+--==================================================
+
+GunButton.MouseButton1Click:Connect(function()
+
+    local character =
+        LocalPlayer.Character
+
+    local root =
+        character
+        and character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+
+    if not root then
+        return
+    end
+
+    local gun = FindGun()
+
+    if not IsPickupGun(gun) then
+
+        Status.Text =
+            "❌ لا يوجد سلاح قابل للأخذ"
+
+        task.delay(1,function()
+
+            Status.Text =
+                "🔴 Murder  🔵 Sheriff  🟢 Innocent"
+
+        end)
+
+        return
+    end
+
+    local position =
+        GetGunPosition(gun)
+
+    if not position then
+        return
+    end
+
+    local oldCFrame = root.CFrame
+
+    Status.Text =
+        "⚡ أخذ السلاح..."
+
+    root.CFrame =
+        CFrame.new(
+            position + Vector3.new(0,2.5,0)
+        )
+
+    task.wait(0.15)
+
+    if root.Parent then
+        root.CFrame = oldCFrame
+    end
+
+    Status.Text =
+        "✅ تم أخذ السلاح"
+
+    task.delay(1,function()
+
+        Status.Text =
+            "🔴 Murder  🔵 Sheriff  🟢 Innocent"
+
+    end)
+end)
+
+--==================================================
+-- PLAYER EVENTS
+--==================================================
+
+Players.PlayerAdded:Connect(function(player)
+
+    player.CharacterAdded:Connect(function()
+
+        task.wait(0.5)
+
+        if ESPEnabled then
+            CreateESP(player)
+        end
+    end)
+end)
+
+for _, player in ipairs(Players:GetPlayers()) do
+
+    if player ~= LocalPlayer then
+
+        player.CharacterAdded:Connect(function()
+
+            task.wait(0.5)
+
+            if ESPEnabled then
+                CreateESP(player)
+            end
+        end)
+    end
+end
+
+--==================================================
+-- MOBILE DRAG
+--==================================================
+
+local dragging = false
+local dragStart
+local startPosition
+
+Main.InputBegan:Connect(function(input)
+
+    if input.UserInputType ==
+        Enum.UserInputType.Touch
+        or input.UserInputType ==
+        Enum.UserInputType.MouseButton1 then
+
+        dragging = true
+        dragStart = input.Position
+        startPosition = Main.Position
+
+        input.Changed:Connect(function()
+
+            if input.UserInputState ==
+                Enum.UserInputState.End then
+
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+
+    if not dragging then
+        return
+    end
+
+    if input.UserInputType ==
+        Enum.UserInputType.Touch
+        or input.UserInputType ==
+        Enum.UserInputType.MouseMovement then
+
+        local delta =
+            input.Position - dragStart
+
+        Main.Position =
+            UDim2.new(
+                startPosition.X.Scale,
+                startPosition.X.Offset + delta.X,
+                startPosition.Y.Scale,
+                startPosition.Y.Offset + delta.Y
+            )
+    end
+end)
+
+--==================================================
+-- FAST AIM LOOP
+--==================================================
+
+RunService.RenderStepped:Connect(function()
+
+    if AimEnabled then
+        AimAtMurder()
+    end
+
+end)
+
+--==================================================
+-- UPDATE LOOP
+--==================================================
+
+task.spawn(function()
+
+    while task.wait(0.5) do
+
+        if ESPEnabled then
+            UpdateESP()
+        end
+
+        UpdateGunESP()
+
+    end
+end)
