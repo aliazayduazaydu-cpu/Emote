@@ -1,0 +1,1030 @@
+--// 🧟 LEGEND OF ZOMBIES
+--// PART 1
+--// AUTO FARM + MAIN UI
+--// ضع هذا الجزء في LocalScript
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+_G.LegendZombie = _G.LegendZombie or {}
+
+local Data = _G.LegendZombie
+
+Data.AutoFarm = false
+Data.FarmRange = 100
+Data.HeightAboveZombie = 5
+Data.AttackDelay = 0.15
+Data.SpawnPosition = Data.SpawnPosition or nil
+Data.SpawnEnabled = Data.SpawnEnabled or false
+
+--==================================================
+-- OLD GUI
+--==================================================
+
+local Old = PlayerGui:FindFirstChild("LegendZombieMobile")
+
+if Old then
+	Old:Destroy()
+end
+
+--==================================================
+-- CHARACTER
+--==================================================
+
+local Character
+local Humanoid
+local RootPart
+
+local function SetupCharacter(Char)
+
+	Character = Char
+	Humanoid = Char:WaitForChild("Humanoid",10)
+	RootPart = Char:WaitForChild("HumanoidRootPart",10)
+
+	if Data.SpawnEnabled
+		and Data.SpawnPosition
+		and RootPart then
+
+		task.wait(0.4)
+
+		if RootPart.Parent then
+			RootPart.CFrame = Data.SpawnPosition
+		end
+
+	end
+end
+
+if Player.Character then
+	task.spawn(SetupCharacter,Player.Character)
+end
+
+Player.CharacterAdded:Connect(function(Char)
+
+	Data.AutoFarm = false
+
+	task.spawn(function()
+		SetupCharacter(Char)
+	end)
+
+end)
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "LegendZombieMobile"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 999
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PlayerGui
+
+--==================================================
+-- OPEN BUTTON
+--==================================================
+
+local OpenButton = Instance.new("TextButton")
+OpenButton.Size = UDim2.fromOffset(58,58)
+OpenButton.Position = UDim2.new(0,18,0.5,-29)
+OpenButton.BackgroundColor3 = Color3.fromRGB(20,20,28)
+OpenButton.BorderSizePixel = 0
+OpenButton.Text = "☰"
+OpenButton.TextColor3 = Color3.new(1,1,1)
+OpenButton.TextSize = 25
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.AutoButtonColor = false
+OpenButton.Active = true
+OpenButton.Parent = Gui
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius = UDim.new(0,18)
+OpenCorner.Parent = OpenButton
+
+local OpenStroke = Instance.new("UIStroke")
+OpenStroke.Thickness = 2.5
+OpenStroke.Parent = OpenButton
+
+--==================================================
+-- MAIN
+--==================================================
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(300,455)
+Main.Position = UDim2.new(0.5,-150,0.5,-227)
+Main.BackgroundColor3 = Color3.fromRGB(17,17,23)
+Main.BorderSizePixel = 0
+Main.Visible = false
+Main.Active = true
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0,18)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Parent = Main
+
+--==================================================
+-- HEADER
+--==================================================
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,62)
+Header.BackgroundColor3 = Color3.fromRGB(27,27,36)
+Header.BorderSizePixel = 0
+Header.Active = true
+Header.Parent = Main
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0,18)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.fromOffset(16,7)
+Title.Size = UDim2.new(1,-70,0,25)
+Title.Text = "🧟 LEGEND OF ZOMBIES"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 17
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.BackgroundTransparency = 1
+Subtitle.Position = UDim2.fromOffset(17,33)
+Subtitle.Size = UDim2.new(1,-70,0,18)
+Subtitle.Text = "AUTO FARM  •  SPAWN POINT"
+Subtitle.TextColor3 = Color3.fromRGB(160,160,175)
+Subtitle.TextSize = 10
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = Header
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(38,38)
+Close.Position = UDim2.new(1,-47,0,12)
+Close.BackgroundColor3 = Color3.fromRGB(48,48,60)
+Close.BorderSizePixel = 0
+Close.Text = "×"
+Close.TextColor3 = Color3.new(1,1,1)
+Close.TextSize = 25
+Close.Font = Enum.Font.GothamBold
+Close.AutoButtonColor = false
+Close.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0,12)
+CloseCorner.Parent = Close
+
+--==================================================
+-- SCROLL
+--==================================================
+
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Position = UDim2.fromOffset(10,72)
+Scroll.Size = UDim2.new(1,-20,1,-82)
+Scroll.BackgroundTransparency = 1
+Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 3
+Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Scroll.Parent = Main
+
+local Padding = Instance.new("UIPadding")
+Padding.PaddingLeft = UDim.new(0,4)
+Padding.PaddingRight = UDim.new(0,4)
+Padding.PaddingBottom = UDim.new(0,10)
+Padding.Parent = Scroll
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0,8)
+Layout.Parent = Scroll
+
+--==================================================
+-- HELPERS
+--==================================================
+
+local function Section(Text)
+
+	local L = Instance.new("TextLabel")
+	L.Size = UDim2.new(1,0,0,30)
+	L.BackgroundTransparency = 1
+	L.Text = Text
+	L.TextColor3 = Color3.fromRGB(210,210,220)
+	L.TextSize = 13
+	L.Font = Enum.Font.GothamBold
+	L.TextXAlignment = Enum.TextXAlignment.Left
+	L.Parent = Scroll
+
+	return L
+end
+
+local function Button(Text,Height)
+
+	local B = Instance.new("TextButton")
+	B.Size = UDim2.new(1,0,0,Height or 42)
+	B.BackgroundColor3 = Color3.fromRGB(34,34,44)
+	B.BorderSizePixel = 0
+	B.Text = Text
+	B.TextColor3 = Color3.new(1,1,1)
+	B.TextSize = 13
+	B.Font = Enum.Font.GothamBold
+	B.AutoButtonColor = false
+	B.Parent = Scroll
+
+	local C = Instance.new("UICorner")
+	C.CornerRadius = UDim.new(0,12)
+	C.Parent = B
+
+	local S = Instance.new("UIStroke")
+	S.Thickness = 1
+	S.Transparency = 0.45
+	S.Parent = B
+
+	return B,S
+end
+
+--==================================================
+-- AUTO FARM UI
+--==================================================
+
+Section("🧟 ZOMBIE AUTO FARM")
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1,0,0,25)
+Status.BackgroundTransparency = 1
+Status.Text = "● Status: OFF"
+Status.TextColor3 = Color3.fromRGB(255,80,80)
+Status.TextSize = 13
+Status.Font = Enum.Font.GothamBold
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.Parent = Scroll
+
+-- RANGE
+
+local RangeBox = Instance.new("TextBox")
+RangeBox.Size = UDim2.new(1,0,0,42)
+RangeBox.BackgroundColor3 = Color3.fromRGB(29,29,38)
+RangeBox.BorderSizePixel = 0
+RangeBox.Text = tostring(Data.FarmRange)
+RangeBox.PlaceholderText = "Farm Range 1 - 250"
+RangeBox.TextColor3 = Color3.new(1,1,1)
+RangeBox.TextSize = 13
+RangeBox.Font = Enum.Font.GothamBold
+RangeBox.ClearTextOnFocus = false
+RangeBox.Parent = Scroll
+
+local RangeCorner = Instance.new("UICorner")
+RangeCorner.CornerRadius = UDim.new(0,11)
+RangeCorner.Parent = RangeBox
+
+-- HEIGHT
+
+local HeightBox = Instance.new("TextBox")
+HeightBox.Size = UDim2.new(1,0,0,42)
+HeightBox.BackgroundColor3 = Color3.fromRGB(29,29,38)
+HeightBox.BorderSizePixel = 0
+HeightBox.Text = tostring(Data.HeightAboveZombie)
+HeightBox.PlaceholderText = "Height 1 - 10"
+HeightBox.TextColor3 = Color3.new(1,1,1)
+HeightBox.TextSize = 13
+HeightBox.Font = Enum.Font.GothamBold
+HeightBox.ClearTextOnFocus = false
+HeightBox.Parent = Scroll
+
+local HeightCorner = Instance.new("UICorner")
+HeightCorner.CornerRadius = UDim.new(0,11)
+HeightCorner.Parent = HeightBox
+
+local ApplyRange = Button("🎯 APPLY FARM RANGE",40)
+local ApplyHeight = Button("📏 APPLY HEIGHT",40)
+
+local FarmToggle,FarmStroke =
+	Button("🌈 AUTO FARM : OFF",52)
+
+FarmToggle.TextSize = 16
+
+--==================================================
+-- RANGE VISUAL
+--==================================================
+
+local RangePart = Instance.new("Part")
+RangePart.Anchored = true
+RangePart.CanCollide = false
+RangePart.CanTouch = false
+RangePart.CanQuery = false
+RangePart.Transparency = 1
+RangePart.Material = Enum.Material.ForceField
+RangePart.Parent = workspace
+
+local RangeVisual = Instance.new("SelectionBox")
+RangeVisual.Adornee = RangePart
+RangeVisual.LineThickness = 0.04
+RangeVisual.SurfaceTransparency = 0.85
+RangeVisual.Visible = false
+RangeVisual.Parent = RangePart
+
+--==================================================
+-- RANGE / HEIGHT
+--==================================================
+
+local function SetRange()
+
+	local V = tonumber(RangeBox.Text)
+
+	if not V then
+		RangeBox.Text = tostring(Data.FarmRange)
+		return
+	end
+
+	V = math.clamp(math.floor(V),1,250)
+
+	Data.FarmRange = V
+	RangeBox.Text = tostring(V)
+
+end
+
+local function SetHeight()
+
+	local V = tonumber(HeightBox.Text)
+
+	if not V then
+		HeightBox.Text = tostring(Data.HeightAboveZombie)
+		return
+	end
+
+	V = math.clamp(math.floor(V),1,10)
+
+	Data.HeightAboveZombie = V
+	HeightBox.Text = tostring(V)
+
+end
+
+ApplyRange.Activated:Connect(SetRange)
+RangeBox.FocusLost:Connect(SetRange)
+
+ApplyHeight.Activated:Connect(SetHeight)
+HeightBox.FocusLost:Connect(SetHeight)
+
+--==================================================
+-- ENEMIES
+--==================================================
+
+local function EnemyRoot(Model)
+
+	return Model:FindFirstChild("HumanoidRootPart")
+		or Model:FindFirstChild("UpperTorso")
+		or Model:FindFirstChild("Torso")
+		or Model.PrimaryPart
+
+end
+
+local function IsEnemy(Model)
+
+	if not Model:IsA("Model") then
+		return false
+	end
+
+	local H = Model:FindFirstChildOfClass("Humanoid")
+
+	if not H or H.Health <= 0 then
+		return false
+	end
+
+	if Players:GetPlayerFromCharacter(Model) then
+		return false
+	end
+
+	return EnemyRoot(Model) ~= nil
+end
+
+local function FindTarget()
+
+	if not Character or not RootPart then
+		return nil
+	end
+
+	local Target
+	local Closest = Data.FarmRange
+
+	for _,Object in ipairs(workspace:GetDescendants()) do
+
+		if IsEnemy(Object) then
+
+			local ER = EnemyRoot(Object)
+
+			if ER then
+
+				local Distance =
+					(RootPart.Position - ER.Position).Magnitude
+
+				if Distance <= Closest then
+					Closest = Distance
+					Target = Object
+				end
+
+			end
+		end
+	end
+
+	return Target
+end
+
+--==================================================
+-- WEAPON
+--==================================================
+
+local function GetWeapon()
+
+	if not Character then
+		return nil
+	end
+
+	local Tool =
+		Character:FindFirstChildOfClass("Tool")
+
+	if Tool then
+		return Tool
+	end
+
+	local Backpack = Player:FindFirstChild("Backpack")
+
+	if Backpack then
+
+		Tool =
+			Backpack:FindFirstChildOfClass("Tool")
+
+		if Tool then
+
+			if Humanoid then
+
+				pcall(function()
+					Humanoid:EquipTool(Tool)
+				end)
+
+			end
+
+			return Tool
+		end
+	end
+
+	return nil
+end
+
+--==================================================
+-- ATTACK
+--==================================================
+
+local function Attack(Target)
+
+	if not Target or not RootPart then
+		return
+	end
+
+	local ER = EnemyRoot(Target)
+	local EH = Target:FindFirstChildOfClass("Humanoid")
+
+	if not ER or not EH or EH.Health <= 0 then
+		return
+	end
+
+	local Above =
+		ER.Position +
+		Vector3.new(0,Data.HeightAboveZombie,0)
+
+	RootPart.CFrame =
+		CFrame.lookAt(Above,ER.Position)
+
+	local Weapon = GetWeapon()
+
+	if Weapon then
+
+		pcall(function()
+			Weapon:Activate()
+		end)
+
+	end
+end
+
+--==================================================
+-- FARM TOGGLE
+--==================================================
+
+local function UpdateFarm()
+
+	if Data.AutoFarm then
+
+		FarmToggle.Text = "🌈 AUTO FARM : ON"
+		Status.Text = "● Status: ON"
+		Status.TextColor3 =
+			Color3.fromRGB(80,255,120)
+
+	else
+
+		FarmToggle.Text = "🌈 AUTO FARM : OFF"
+		Status.Text = "● Status: OFF"
+		Status.TextColor3 =
+			Color3.fromRGB(255,80,80)
+
+	end
+end
+
+FarmToggle.Activated:Connect(function()
+
+	Data.AutoFarm = not Data.AutoFarm
+
+	UpdateFarm()
+
+end)
+
+--==================================================
+-- FARM LOOP
+--==================================================
+
+task.spawn(function()
+
+	while Gui.Parent do
+
+		if Data.AutoFarm then
+
+			local Target = FindTarget()
+
+			if Target then
+
+				Status.Text =
+					"🎯 Target: "..Target.Name
+
+				local TH =
+					Target:FindFirstChildOfClass("Humanoid")
+
+				if TH then
+
+					repeat
+
+						if not Data.AutoFarm then
+							break
+						end
+
+						if not TH.Parent
+							or TH.Health <= 0 then
+							break
+						end
+
+						Attack(Target)
+
+						task.wait(Data.AttackDelay)
+
+					until not Data.AutoFarm
+
+				end
+
+			else
+
+				Status.Text = "● No Zombie"
+
+				task.wait(0.25)
+
+			end
+
+		else
+
+			task.wait(0.1)
+
+		end
+
+	end
+
+end)
+
+--==================================================
+-- RAINBOW
+--==================================================
+
+task.spawn(function()
+
+	local Hue = 0
+
+	while Gui.Parent do
+
+		Hue = (Hue + 0.006) % 1
+
+		local C =
+			Color3.fromHSV(Hue,0.85,1)
+
+		OpenStroke.Color = C
+		MainStroke.Color = C
+		FarmStroke.Color = C
+
+		RangeVisual.Color3 = C
+
+		task.wait()
+
+	end
+
+end)
+
+--==================================================
+-- RANGE DISPLAY
+--==================================================
+
+RunService.RenderStepped:Connect(function()
+
+	if RootPart then
+
+		RangePart.Size =
+			Vector3.new(
+				Data.FarmRange*2,
+				8,
+				Data.FarmRange*2
+			)
+
+		RangePart.CFrame =
+			CFrame.new(RootPart.Position)
+
+		if Data.AutoFarm then
+
+			RangePart.Transparency = 0.88
+			RangeVisual.Visible = true
+
+		else
+
+			RangePart.Transparency = 1
+			RangeVisual.Visible = false
+
+		end
+
+	end
+
+end)
+
+--==================================================
+-- OPEN / CLOSE
+--==================================================
+
+local Open = false
+
+local function ToggleMenu()
+
+	Open = not Open
+
+	if Open then
+
+		Main.Visible = true
+		OpenButton.Text = "×"
+
+	else
+
+		Main.Visible = false
+		OpenButton.Text = "☰"
+
+	end
+end
+
+OpenButton.Activated:Connect(ToggleMenu)
+Close.Activated:Connect(ToggleMenu)
+
+--==================================================
+-- MOVE OPEN BUTTON
+--==================================================
+
+local Dragging = false
+local DragStart
+local StartPos
+
+OpenButton.InputBegan:Connect(function(Input)
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+		or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+		Dragging = true
+		DragStart = Input.Position
+		StartPos = OpenButton.Position
+
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(Input)
+
+	if not Dragging then
+		return
+	end
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+		or Input.UserInputType == Enum.UserInputType.MouseMovement then
+
+		local Delta =
+			Input.Position-DragStart
+
+		OpenButton.Position =
+			UDim2.new(
+				StartPos.X.Scale,
+				StartPos.X.Offset+Delta.X,
+				StartPos.Y.Scale,
+				StartPos.Y.Offset+Delta.Y
+			)
+
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(Input)
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+		or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+		Dragging = false
+
+	end
+end)
+
+--==================================================
+-- MOVE MENU
+--==================================================
+
+local MenuDragging = false
+local MenuDragStart
+local MenuStartPos
+
+Header.InputBegan:Connect(function(Input)
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+		or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+		MenuDragging = true
+		MenuDragStart = Input.Position
+		MenuStartPos = Main.Position
+
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(Input)
+
+	if not MenuDragging then
+		return
+	end
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+		or Input.UserInputType == Enum.UserInputType.MouseMovement then
+
+		local Delta =
+			Input.Position-MenuDragStart
+
+		Main.Position =
+			UDim2.new(
+				MenuStartPos.X.Scale,
+				MenuStartPos.X.Offset+Delta.X,
+				MenuStartPos.Y.Scale,
+				MenuStartPos.Y.Offset+Delta.Y
+			)
+
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(Input)
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+		or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+		MenuDragging = false
+
+	end
+end)
+
+UpdateFarm()
+
+print("🧟 Part 1 Loaded")
+--==================================================
+-- 🌈 SPAWN POINT
+--// PART 2
+--==================================================
+
+local Data = _G.LegendZombie
+
+local Scroll = Gui:FindFirstChild("Main"):FindFirstChild("Content")
+
+if not Scroll then
+	Scroll = Main:FindFirstChild("Content")
+end
+
+--==================================================
+-- SECTION
+--==================================================
+
+local SpawnSection = Instance.new("TextLabel")
+SpawnSection.Size = UDim2.new(1,0,0,30)
+SpawnSection.BackgroundTransparency = 1
+SpawnSection.Text = "🌈 SPAWN POINT"
+SpawnSection.TextColor3 = Color3.fromRGB(210,210,220)
+SpawnSection.TextSize = 13
+SpawnSection.Font = Enum.Font.GothamBold
+SpawnSection.TextXAlignment = Enum.TextXAlignment.Left
+SpawnSection.Parent = Scroll
+
+--==================================================
+-- STATUS
+--==================================================
+
+local SpawnStatus = Instance.new("TextLabel")
+SpawnStatus.Size = UDim2.new(1,0,0,24)
+SpawnStatus.BackgroundTransparency = 1
+SpawnStatus.Text = "● No Spawn Point"
+SpawnStatus.TextColor3 =
+	Color3.fromRGB(170,170,180)
+SpawnStatus.TextSize = 12
+SpawnStatus.Font = Enum.Font.GothamBold
+SpawnStatus.TextXAlignment = Enum.TextXAlignment.Left
+SpawnStatus.Parent = Scroll
+
+--==================================================
+-- BUTTON CREATOR
+--==================================================
+
+local function SpawnButton(Text)
+
+	local B = Instance.new("TextButton")
+
+	B.Size = UDim2.new(1,0,0,43)
+	B.BackgroundColor3 =
+		Color3.fromRGB(34,34,44)
+
+	B.BorderSizePixel = 0
+	B.Text = Text
+	B.TextColor3 = Color3.new(1,1,1)
+	B.TextSize = 13
+	B.Font = Enum.Font.GothamBold
+	B.AutoButtonColor = false
+	B.Parent = Scroll
+
+	local C = Instance.new("UICorner")
+	C.CornerRadius = UDim.new(0,12)
+	C.Parent = B
+
+	local S = Instance.new("UIStroke")
+	S.Thickness = 1
+	S.Transparency = 0.4
+	S.Parent = B
+
+	return B,S
+end
+
+--==================================================
+-- BUTTONS
+--==================================================
+
+local SetSpawn,SetStroke =
+	SpawnButton("📍 SET SPAWN POINT")
+
+local TeleportSpawn,TeleportStroke =
+	SpawnButton("🚀 TELEPORT TO SPAWN")
+
+local ClearSpawn,ClearStroke =
+	SpawnButton("🗑️ CLEAR SPAWN POINT")
+
+--==================================================
+-- SET SPAWN
+--==================================================
+
+SetSpawn.Activated:Connect(function()
+
+	if not RootPart then
+
+		SpawnStatus.Text =
+			"⚠️ Character not ready"
+
+		SpawnStatus.TextColor3 =
+			Color3.fromRGB(255,180,80)
+
+		return
+	end
+
+	Data.SpawnPosition =
+		RootPart.CFrame
+
+	Data.SpawnEnabled = true
+
+	SpawnStatus.Text =
+		"● Spawn Point: SAVED"
+
+	SpawnStatus.TextColor3 =
+		Color3.fromRGB(80,255,140)
+
+	SetSpawn.Text =
+		"✅ SPAWN POINT SAVED"
+
+	task.wait(1)
+
+	if SetSpawn.Parent then
+		SetSpawn.Text =
+			"📍 SET SPAWN POINT"
+	end
+
+end)
+
+--==================================================
+-- TELEPORT
+--==================================================
+
+TeleportSpawn.Activated:Connect(function()
+
+	if not Data.SpawnPosition then
+
+		SpawnStatus.Text =
+			"⚠️ Set Spawn Point first!"
+
+		SpawnStatus.TextColor3 =
+			Color3.fromRGB(255,180,80)
+
+		return
+	end
+
+	if RootPart and RootPart.Parent then
+
+		RootPart.AssemblyLinearVelocity =
+			Vector3.zero
+
+		RootPart.AssemblyAngularVelocity =
+			Vector3.zero
+
+		RootPart.CFrame =
+			Data.SpawnPosition +
+			Vector3.new(0,2,0)
+
+		SpawnStatus.Text =
+			"📍 Teleported!"
+
+		SpawnStatus.TextColor3 =
+			Color3.fromRGB(100,200,255)
+
+		task.wait(1)
+
+		if Data.SpawnPosition then
+
+			SpawnStatus.Text =
+				"● Spawn Point: SAVED"
+
+			SpawnStatus.TextColor3 =
+				Color3.fromRGB(80,255,140)
+
+		end
+
+	end
+
+end)
+
+--==================================================
+-- CLEAR
+--==================================================
+
+ClearSpawn.Activated:Connect(function()
+
+	Data.SpawnPosition = nil
+	Data.SpawnEnabled = false
+
+	SpawnStatus.Text =
+		"● No Spawn Point"
+
+	SpawnStatus.TextColor3 =
+		Color3.fromRGB(170,170,180)
+
+	SetSpawn.Text =
+		"📍 SET SPAWN POINT"
+
+end)
+
+--==================================================
+-- RAINBOW
+--==================================================
+
+task.spawn(function()
+
+	local Hue = 0
+
+	while Gui.Parent do
+
+		Hue = (Hue + 0.006) % 1
+
+		local C =
+			Color3.fromHSV(Hue,0.85,1)
+
+		SetStroke.Color = C
+		TeleportStroke.Color = C
+		ClearStroke.Color = C
+
+		task.wait()
+
+	end
+
+end)
+
+print("🌈 Part 2 Loaded - Spawn Point Added")
