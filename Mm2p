@@ -1,0 +1,674 @@
+--// 🌈 MM2 MOBILE - FULL PART 1
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+local Cam = workspace.CurrentCamera
+
+local ESP = false
+local Aim = false
+local Noclip = false
+local InfJump = false
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "MM2Mobile"
+Gui.ResetOnSpawn = false
+Gui.Parent = PG
+
+--==================================================
+-- RAINBOW
+--==================================================
+
+local function Rainbow(obj)
+	task.spawn(function()
+		local hue = 0
+
+		while obj and obj.Parent do
+			hue = (hue + 0.008) % 1
+			obj.BackgroundColor3 = Color3.fromHSV(hue,0.85,1)
+			task.wait()
+		end
+	end)
+end
+
+--==================================================
+-- MAIN
+--==================================================
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0,215,0,330)
+Main.Position = UDim2.new(.5,-107,.5,-165)
+Main.BackgroundColor3 = Color3.fromRGB(17,18,24)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0,14)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 1.5
+MainStroke.Color = Color3.fromRGB(90,90,105)
+MainStroke.Transparency = .25
+MainStroke.Parent = Main
+
+--==================================================
+-- HEADER
+--==================================================
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,-14,0,48)
+Header.Position = UDim2.new(0,7,0,7)
+Header.BackgroundColor3 = Color3.fromRGB(28,29,38)
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0,11)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-15,0,27)
+Title.Position = UDim2.new(0,8,0,3)
+Title.BackgroundTransparency = 1
+Title.Text = "🌈  MM2 MOBILE"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 17
+Title.Font = Enum.Font.GothamBlack
+Title.Parent = Header
+
+local Sub = Instance.new("TextLabel")
+Sub.Size = UDim2.new(1,-15,0,15)
+Sub.Position = UDim2.new(0,8,0,29)
+Sub.BackgroundTransparency = 1
+Sub.Text = "ESP  •  AIM  •  GUN  •  MOVEMENT"
+Sub.TextColor3 = Color3.fromRGB(145,145,160)
+Sub.TextSize = 8
+Sub.Font = Enum.Font.GothamBold
+Sub.Parent = Header
+
+--==================================================
+-- BUTTON
+--==================================================
+
+local function MakeButton(text,y)
+
+	local b = Instance.new("TextButton")
+
+	b.Size = UDim2.new(1,-24,0,39)
+	b.Position = UDim2.new(0,12,0,y)
+
+	b.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	b.BorderSizePixel = 0
+
+	b.Text = text
+	b.TextColor3 = Color3.new(1,1,1)
+	b.TextSize = 13
+	b.Font = Enum.Font.GothamBold
+
+	b.AutoButtonColor = false
+	b.Parent = Main
+
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0,10)
+	c.Parent = b
+
+	local s = Instance.new("UIStroke")
+	s.Thickness = 1
+	s.Color = Color3.new(1,1,1)
+	s.Transparency = .7
+	s.Parent = b
+
+	Rainbow(b)
+
+	return b
+end
+
+local ESPBtn = MakeButton("👁  ESP  •  OFF",63)
+local AimBtn = MakeButton("🎯  AIM MURDER  •  OFF",107)
+local GunBtn = MakeButton("🔫  خذ السلاح",151)
+local NoclipBtn = MakeButton("👻  NOCLIP  •  OFF",195)
+local JumpBtn = MakeButton("🦘  INFINITE JUMP  •  OFF",239)
+
+--==================================================
+-- STATUS
+--==================================================
+
+Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1,-20,0,28)
+Status.Position = UDim2.new(0,10,0,284)
+Status.BackgroundTransparency = 1
+Status.Text = "🔴 Murder   🔵 Sheriff   🟢 Innocent"
+Status.TextColor3 = Color3.fromRGB(175,175,185)
+Status.TextSize = 9
+Status.Font = Enum.Font.GothamMedium
+Status.Parent = Main
+
+--==================================================
+-- SMALL OPEN/CLOSE
+--==================================================
+
+local Open = Instance.new("TextButton")
+
+Open.Size = UDim2.new(0,46,0,46)
+Open.Position = UDim2.new(0,14,.5,-23)
+
+Open.BackgroundColor3 = Color3.fromRGB(255,0,0)
+Open.Text = "✕"
+Open.TextColor3 = Color3.new(1,1,1)
+Open.TextSize = 20
+Open.Font = Enum.Font.GothamBlack
+Open.AutoButtonColor = false
+Open.Active = true
+Open.Parent = Gui
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius = UDim.new(1,0)
+OpenCorner.Parent = Open
+
+local OpenStroke = Instance.new("UIStroke")
+OpenStroke.Thickness = 2
+OpenStroke.Color = Color3.new(1,1,1)
+OpenStroke.Transparency = .2
+OpenStroke.Parent = Open
+
+Rainbow(Open)
+
+local opened = true
+
+Open.MouseButton1Click:Connect(function()
+
+	opened = not opened
+	Main.Visible = opened
+	Open.Text = opened and "✕" or "☰"
+
+end)
+
+--==================================================
+-- DRAG
+--==================================================
+
+local function MakeDraggable(obj)
+
+	local dragging = false
+	local startInput
+	local startPosition
+
+	obj.InputBegan:Connect(function(input)
+
+		if input.UserInputType == Enum.UserInputType.Touch
+		or input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+			dragging = true
+			startInput = input.Position
+			startPosition = obj.Position
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+
+		if not dragging then return end
+
+		if input.UserInputType == Enum.UserInputType.Touch
+		or input.UserInputType == Enum.UserInputType.MouseMovement then
+
+			local delta = input.Position - startInput
+
+			obj.Position = UDim2.new(
+				startPosition.X.Scale,
+				startPosition.X.Offset + delta.X,
+				startPosition.Y.Scale,
+				startPosition.Y.Offset + delta.Y
+			)
+		end
+	end)
+
+	UIS.InputEnded:Connect(function(input)
+
+		if input.UserInputType == Enum.UserInputType.Touch
+		or input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+			dragging = false
+		end
+	end)
+end
+
+MakeDraggable(Main)
+MakeDraggable(Open)
+
+--==================================================
+-- ROLE DETECTION
+--==================================================
+
+local Colors = {
+	Murder = Color3.fromRGB(255,40,40),
+	Sheriff = Color3.fromRGB(40,120,255),
+	Innocent = Color3.fromRGB(40,255,70)
+}
+
+local function Role(p)
+
+	local c = p.Character
+	local b = p:FindFirstChild("Backpack")
+
+	if c and c:FindFirstChild("Knife")
+	or b and b:FindFirstChild("Knife") then
+		return "Murder"
+	end
+
+	if c and c:FindFirstChild("Gun")
+	or b and b:FindFirstChild("Gun") then
+		return "Sheriff"
+	end
+
+	return "Innocent"
+end
+
+--==================================================
+-- ESP
+--==================================================
+
+local function ClearESP(p)
+
+	if not p.Character then return end
+
+	for _,v in ipairs(p.Character:GetChildren()) do
+
+		if v.Name == "MM2ESP"
+		or v.Name == "MM2Name" then
+
+			v:Destroy()
+		end
+	end
+end
+
+local function MakeESP(p)
+
+	if p == LP or not p.Character then return end
+
+	local c = p.Character
+	local head = c:FindFirstChild("Head")
+
+	if not head then return end
+
+	ClearESP(p)
+
+	local color = Colors[Role(p)]
+
+	local h = Instance.new("Highlight")
+
+	h.Name = "MM2ESP"
+	h.Adornee = c
+	h.FillColor = color
+	h.OutlineColor = color
+	h.FillTransparency = .55
+	h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	h.Parent = c
+
+	local g = Instance.new("BillboardGui")
+
+	g.Name = "MM2Name"
+	g.Adornee = head
+	g.Size = UDim2.new(0,90,0,20)
+	g.StudsOffset = Vector3.new(0,2.5,0)
+	g.AlwaysOnTop = true
+	g.Parent = c
+
+	local t = Instance.new("TextLabel")
+
+	t.Size = UDim2.fromScale(1,1)
+	t.BackgroundTransparency = 1
+	t.Text = p.Name
+	t.TextColor3 = color
+	t.TextStrokeTransparency = 0
+	t.TextSize = 10
+	t.Font = Enum.Font.GothamBold
+	t.Parent = g
+end
+
+local function UpdateESP()
+
+	for _,p in ipairs(Players:GetPlayers()) do
+
+		if p ~= LP then
+
+			if ESP then
+				MakeESP(p)
+			else
+				ClearESP(p)
+			end
+		end
+	end
+end
+
+--==================================================
+-- BUTTON EVENTS
+--==================================================
+
+ESPBtn.MouseButton1Click:Connect(function()
+
+	ESP = not ESP
+
+	ESPBtn.Text =
+		ESP and "👁  ESP  •  ON"
+		or "👁  ESP  •  OFF"
+
+	UpdateESP()
+end)
+
+AimBtn.MouseButton1Click:Connect(function()
+
+	Aim = not Aim
+
+	AimBtn.Text =
+		Aim and "🎯  AIM MURDER  •  ON"
+		or "🎯  AIM MURDER  •  OFF"
+end)
+
+NoclipBtn.MouseButton1Click:Connect(function()
+
+	Noclip = not Noclip
+
+	NoclipBtn.Text =
+		Noclip and "👻  NOCLIP  •  ON"
+		or "👻  NOCLIP  •  OFF"
+end)
+
+JumpBtn.MouseButton1Click:Connect(function()
+
+	InfJump = not InfJump
+
+	JumpBtn.Text =
+		InfJump
+		and "🦘  INFINITE JUMP  •  ON"
+		or "🦘  INFINITE JUMP  •  OFF"
+end)
+
+--==================================================
+-- INFINITE JUMP
+--==================================================
+
+UIS.JumpRequest:Connect(function()
+
+	if not InfJump then return end
+
+	local hum =
+		LP.Character
+		and LP.Character:FindFirstChildOfClass("Humanoid")
+
+	if hum then
+		hum:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+--==================================================
+-- NOCLIP
+--==================================================
+
+RS.Stepped:Connect(function()
+
+	if not Noclip then return end
+
+	if LP.Character then
+
+		for _,v in ipairs(
+			LP.Character:GetDescendants()
+		) do
+
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+	end
+end)--// 🔫 MM2 MOBILE - FULL PART 2
+
+--==================================================
+-- FIND MURDER
+--==================================================
+
+local function FindMurder()
+
+	for _,p in ipairs(Players:GetPlayers()) do
+
+		if p ~= LP and Role(p) == "Murder" then
+
+			local c = p.Character
+			local head = c and c:FindFirstChild("Head")
+			local hum = c and c:FindFirstChildOfClass("Humanoid")
+
+			if head and hum and hum.Health > 0 then
+				return p
+			end
+		end
+	end
+end
+
+--==================================================
+-- AIM MURDER
+--==================================================
+
+RS.RenderStepped:Connect(function()
+
+	if not Aim then return end
+
+	local p = FindMurder()
+
+	if not p or not p.Character then
+		return
+	end
+
+	local head = p.Character:FindFirstChild("Head")
+
+	if head then
+
+		local cf = Cam.CFrame
+
+		Cam.CFrame = cf:Lerp(
+			CFrame.lookAt(
+				cf.Position,
+				head.Position
+			),
+			.75
+		)
+	end
+end)
+
+--==================================================
+-- FIND GUN
+--==================================================
+
+local function FindGun()
+
+	for _,v in ipairs(workspace:GetDescendants()) do
+
+		if v.Name == "GunDrop"
+		or v.Name == "Gun" then
+
+			if v:IsA("BasePart")
+			or v:IsA("Model") then
+
+				return v
+			end
+		end
+
+		if v:IsA("Tool")
+		and v.Name:lower():find("gun") then
+
+			return v
+		end
+	end
+end
+
+local function GunPart(g)
+
+	if not g then return end
+
+	if g:IsA("BasePart") then
+		return g
+	end
+
+	if g:IsA("Model") then
+
+		return g.PrimaryPart
+		or g:FindFirstChildWhichIsA("BasePart")
+	end
+
+	if g:IsA("Tool") then
+
+		return g:FindFirstChildWhichIsA("BasePart")
+	end
+end
+
+--==================================================
+-- GUN ESP
+--==================================================
+
+local LastGun
+
+local function GunESP()
+
+	local gun = FindGun()
+
+	if gun == LastGun then
+		return
+	end
+
+	LastGun = gun
+
+	if not gun then
+		return
+	end
+
+	local highlight = Instance.new("Highlight")
+
+	highlight.Name = "GunESP"
+	highlight.Adornee = gun
+
+	highlight.FillColor =
+		Color3.fromRGB(255,255,0)
+
+	highlight.OutlineColor =
+		Color3.fromRGB(255,150,0)
+
+	highlight.FillTransparency = .05
+	highlight.DepthMode =
+		Enum.HighlightDepthMode.AlwaysOnTop
+
+	highlight.Parent = gun
+
+	local part = GunPart(gun)
+
+	if part then
+
+		local label = Instance.new("BillboardGui")
+
+		label.Name = "GunText"
+		label.Adornee = part
+		label.Size = UDim2.new(0,140,0,30)
+		label.StudsOffset = Vector3.new(0,3,0)
+		label.AlwaysOnTop = true
+		label.Parent = gun
+
+		local text = Instance.new("TextLabel")
+
+		text.Size = UDim2.fromScale(1,1)
+		text.BackgroundTransparency = 1
+		text.Text = "🔫 سلاح هنا"
+		text.TextColor3 = Color3.fromRGB(255,255,0)
+		text.TextStrokeTransparency = 0
+		text.TextSize = 16
+		text.Font = Enum.Font.GothamBold
+		text.Parent = label
+	end
+end
+
+--==================================================
+-- TAKE GUN
+--==================================================
+
+GunBtn.MouseButton1Click:Connect(function()
+
+	local character = LP.Character
+	local root =
+		character
+		and character:FindFirstChild("HumanoidRootPart")
+
+	local gun = FindGun()
+	local part = GunPart(gun)
+
+	if not root or not part then
+
+		Status.Text = "❌ لا يوجد سلاح"
+
+		task.delay(1,function()
+			Status.Text =
+				"🔴 Murder   🔵 Sheriff   🟢 Innocent"
+		end)
+
+		return
+	end
+
+	local oldPosition = root.CFrame
+
+	Status.Text = "⚡ الانتقال للسلاح..."
+
+	root.CFrame =
+		CFrame.new(
+			part.Position + Vector3.new(0,2,0)
+		)
+
+	task.wait(.15)
+
+	if root.Parent then
+		root.CFrame = oldPosition
+	end
+
+	Status.Text = "✅ تم أخذ السلاح"
+
+	task.delay(1,function()
+
+		Status.Text =
+			"🔴 Murder   🔵 Sheriff   🟢 Innocent"
+
+	end)
+end)
+
+--==================================================
+-- PLAYER ESP
+--==================================================
+
+Players.PlayerAdded:Connect(function(p)
+
+	p.CharacterAdded:Connect(function()
+
+		task.wait(.5)
+
+		if ESP then
+			MakeESP(p)
+		end
+	end)
+end)
+
+--==================================================
+-- UPDATE
+--==================================================
+
+task.spawn(function()
+
+	while task.wait(.3) do
+
+		if ESP then
+			UpdateESP()
+		end
+
+		GunESP()
+	end
+end)
