@@ -1,0 +1,455 @@
+--// 🧟 LEGEND OF ZOMBIES RPG
+--// AUTO FARM FULL MOBILE
+--// Range: 1 - 250
+--// Attack Distance: 1 - 10
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local AutoFarm = false
+local FarmRange = 100
+local AttackDistance = 6
+local AttackDelay = 0.15
+
+local OldGui = PlayerGui:FindFirstChild("LegendZombieAutoFarm")
+if OldGui then
+	OldGui:Destroy()
+end
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "LegendZombieAutoFarm"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 999
+Gui.Parent = PlayerGui
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(285, 310)
+Main.Position = UDim2.new(0.5, -142, 0.5, -155)
+Main.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = Gui
+
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Thickness = 2
+Stroke.Transparency = 0.15
+Stroke.Parent = Main
+
+local Header = Instance.new("TextButton")
+Header.Size = UDim2.new(1, 0, 0, 48)
+Header.BackgroundColor3 = Color3.fromRGB(32, 32, 40)
+Header.BorderSizePixel = 0
+Header.Text = "🧟  ZOMBIE AUTO FARM"
+Header.TextColor3 = Color3.new(1, 1, 1)
+Header.TextSize = 17
+Header.Font = Enum.Font.GothamBold
+Header.AutoButtonColor = false
+Header.Parent = Main
+
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 14)
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, -20, 0, 27)
+Status.Position = UDim2.fromOffset(10, 53)
+Status.BackgroundTransparency = 1
+Status.Text = "Status: OFF"
+Status.TextColor3 = Color3.fromRGB(255, 80, 80)
+Status.TextSize = 14
+Status.Font = Enum.Font.GothamBold
+Status.Parent = Main
+
+local RangeTitle = Instance.new("TextLabel")
+RangeTitle.Size = UDim2.fromOffset(125, 28)
+RangeTitle.Position = UDim2.fromOffset(12, 84)
+RangeTitle.BackgroundTransparency = 1
+RangeTitle.Text = "🎯 Farm Range"
+RangeTitle.TextColor3 = Color3.new(1, 1, 1)
+RangeTitle.TextSize = 14
+RangeTitle.Font = Enum.Font.GothamBold
+RangeTitle.TextXAlignment = Enum.TextXAlignment.Left
+RangeTitle.Parent = Main
+
+local RangeInput = Instance.new("TextBox")
+RangeInput.Size = UDim2.fromOffset(125, 34)
+RangeInput.Position = UDim2.fromOffset(145, 81)
+RangeInput.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+RangeInput.BorderSizePixel = 0
+RangeInput.Text = "100"
+RangeInput.PlaceholderText = "1 - 250"
+RangeInput.TextColor3 = Color3.new(1, 1, 1)
+RangeInput.TextSize = 14
+RangeInput.Font = Enum.Font.GothamBold
+RangeInput.ClearTextOnFocus = false
+RangeInput.Parent = Main
+
+Instance.new("UICorner", RangeInput).CornerRadius = UDim.new(0, 8)
+
+local RangeApply = Instance.new("TextButton")
+RangeApply.Size = UDim2.fromOffset(258, 32)
+RangeApply.Position = UDim2.fromOffset(13, 120)
+RangeApply.BackgroundColor3 = Color3.fromRGB(55, 55, 68)
+RangeApply.BorderSizePixel = 0
+RangeApply.Text = "APPLY FARM RANGE"
+RangeApply.TextColor3 = Color3.new(1, 1, 1)
+RangeApply.TextSize = 13
+RangeApply.Font = Enum.Font.GothamBold
+RangeApply.Parent = Main
+
+Instance.new("UICorner", RangeApply).CornerRadius = UDim.new(0, 8)
+
+local DistanceTitle = Instance.new("TextLabel")
+DistanceTitle.Size = UDim2.fromOffset(125, 28)
+DistanceTitle.Position = UDim2.fromOffset(12, 161)
+DistanceTitle.BackgroundTransparency = 1
+DistanceTitle.Text = "📏 Attack Distance"
+DistanceTitle.TextColor3 = Color3.new(1, 1, 1)
+DistanceTitle.TextSize = 14
+DistanceTitle.Font = Enum.Font.GothamBold
+DistanceTitle.TextXAlignment = Enum.TextXAlignment.Left
+DistanceTitle.Parent = Main
+
+local DistanceInput = Instance.new("TextBox")
+DistanceInput.Size = UDim2.fromOffset(125, 34)
+DistanceInput.Position = UDim2.fromOffset(145, 158)
+DistanceInput.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+DistanceInput.BorderSizePixel = 0
+DistanceInput.Text = "6"
+DistanceInput.PlaceholderText = "1 - 10"
+DistanceInput.TextColor3 = Color3.new(1, 1, 1)
+DistanceInput.TextSize = 14
+DistanceInput.Font = Enum.Font.GothamBold
+DistanceInput.ClearTextOnFocus = false
+DistanceInput.Parent = Main
+
+Instance.new("UICorner", DistanceInput).CornerRadius = UDim.new(0, 8)
+
+local DistanceApply = Instance.new("TextButton")
+DistanceApply.Size = UDim2.fromOffset(258, 32)
+DistanceApply.Position = UDim2.fromOffset(13, 197)
+DistanceApply.BackgroundColor3 = Color3.fromRGB(55, 55, 68)
+DistanceApply.BorderSizePixel = 0
+DistanceApply.Text = "APPLY ATTACK DISTANCE"
+DistanceApply.TextColor3 = Color3.new(1, 1, 1)
+DistanceApply.TextSize = 13
+DistanceApply.Font = Enum.Font.GothamBold
+DistanceApply.Parent = Main
+
+Instance.new("UICorner", DistanceApply).CornerRadius = UDim.new(0, 8)
+
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.fromOffset(258, 55)
+Toggle.Position = UDim2.fromOffset(13, 242)
+Toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+Toggle.BorderSizePixel = 0
+Toggle.Text = "AUTO FARM : OFF"
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.TextSize = 17
+Toggle.Font = Enum.Font.GothamBold
+Toggle.Parent = Main
+
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 11)
+
+task.spawn(function()
+	local Hue = 0
+
+	while Gui.Parent do
+		Hue = (Hue + 0.006) % 1
+		Toggle.BackgroundColor3 = Color3.fromHSV(Hue, 0.9, 1)
+		task.wait()
+	end
+end)
+
+local Dragging = false
+local DragStart
+local StartPosition
+
+local function BeginDrag(Input)
+	Dragging = true
+	DragStart = Input.Position
+	StartPosition = Main.Position
+end
+
+Header.InputBegan:Connect(function(Input)
+	if Input.UserInputType == Enum.UserInputType.Touch
+	or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		BeginDrag(Input)
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(Input)
+	if not Dragging then
+		return
+	end
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+	or Input.UserInputType == Enum.UserInputType.MouseMovement then
+
+		local Delta = Input.Position - DragStart
+
+		Main.Position = UDim2.new(
+			StartPosition.X.Scale,
+			StartPosition.X.Offset + Delta.X,
+			StartPosition.Y.Scale,
+			StartPosition.Y.Offset + Delta.Y
+		)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(Input)
+	if Input.UserInputType == Enum.UserInputType.Touch
+	or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+		Dragging = false
+	end
+end)
+
+local function ApplyFarmRange()
+	local Value = tonumber(RangeInput.Text)
+
+	if not Value then
+		RangeInput.Text = tostring(FarmRange)
+		return
+	end
+
+	Value = math.clamp(math.floor(Value), 1, 250)
+
+	FarmRange = Value
+	RangeInput.Text = tostring(Value)
+end
+
+RangeApply.Activated:Connect(ApplyFarmRange)
+RangeInput.FocusLost:Connect(ApplyFarmRange)
+
+local function ApplyAttackDistance()
+	local Value = tonumber(DistanceInput.Text)
+
+	if not Value then
+		DistanceInput.Text = tostring(AttackDistance)
+		return
+	end
+
+	Value = math.clamp(math.floor(Value), 1, 10)
+
+	AttackDistance = Value
+	DistanceInput.Text = tostring(Value)
+end
+
+DistanceApply.Activated:Connect(ApplyAttackDistance)
+DistanceInput.FocusLost:Connect(ApplyAttackDistance)
+
+local RangePart = Instance.new("Part")
+RangePart.Name = "ZombieAutoFarmRange"
+RangePart.Anchored = true
+RangePart.CanCollide = false
+RangePart.CanTouch = false
+RangePart.CanQuery = false
+RangePart.CastShadow = false
+RangePart.Material = Enum.Material.ForceField
+RangePart.Color = Color3.fromRGB(0, 255, 100)
+RangePart.Transparency = 1
+RangePart.Parent = workspace
+
+local RangeSelection = Instance.new("SelectionBox")
+RangeSelection.Adornee = RangePart
+RangeSelection.LineThickness = 0.04
+RangeSelection.Color3 = Color3.fromRGB(0, 255, 100)
+RangeSelection.SurfaceTransparency = 0.82
+RangeSelection.Visible = false
+RangeSelection.Parent = RangePart
+
+RunService.RenderStepped:Connect(function()
+	local Character = Player.Character
+	local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+
+	if not Root then
+		RangePart.Transparency = 1
+		RangeSelection.Visible = false
+		return
+	end
+
+	RangePart.Size = Vector3.new(
+		FarmRange * 2,
+		8,
+		FarmRange * 2
+	)
+
+	RangePart.CFrame = CFrame.new(Root.Position)
+
+	RangePart.Transparency = AutoFarm and 0.88 or 1
+	RangeSelection.Visible = AutoFarm
+end)
+
+local function GetEnemyRoot(Model)
+	return Model:FindFirstChild("HumanoidRootPart")
+		or Model:FindFirstChild("UpperTorso")
+		or Model:FindFirstChild("Torso")
+		or Model.PrimaryPart
+end
+
+local function IsEnemy(Model)
+	if not Model:IsA("Model") then
+		return false
+	end
+
+	local Humanoid = Model:FindFirstChildOfClass("Humanoid")
+
+	if not Humanoid or Humanoid.Health <= 0 then
+		return false
+	end
+
+	if Players:GetPlayerFromCharacter(Model) then
+		return false
+	end
+
+	return GetEnemyRoot(Model) ~= nil
+end
+
+local function FindTarget()
+	local Character = Player.Character
+
+	if not Character then
+		return nil
+	end
+
+	local Root = Character:FindFirstChild("HumanoidRootPart")
+
+	if not Root then
+		return nil
+	end
+
+	local Target
+	local ClosestDistance = FarmRange
+
+	for _, Object in ipairs(workspace:GetDescendants()) do
+		if IsEnemy(Object) then
+
+			local EnemyRoot = GetEnemyRoot(Object)
+
+			if EnemyRoot then
+				local Distance =
+					(Root.Position - EnemyRoot.Position).Magnitude
+
+				if Distance <= ClosestDistance then
+					ClosestDistance = Distance
+					Target = Object
+				end
+			end
+		end
+	end
+
+	return Target
+end
+
+local function GetWeapon()
+	local Character = Player.Character
+
+	if not Character then
+		return nil
+	end
+
+	local Tool = Character:FindFirstChildOfClass("Tool")
+
+	if Tool then
+		return Tool
+	end
+
+	local Backpack = Player:FindFirstChild("Backpack")
+
+	if not Backpack then
+		return nil
+	end
+
+	Tool = Backpack:FindFirstChildOfClass("Tool")
+
+	if Tool then
+		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+		if Humanoid then
+			Humanoid:EquipTool(Tool)
+		end
+
+		return Tool
+	end
+
+	return nil
+end
+
+local function Attack(Target)
+	if not Target then
+		return
+	end
+
+	local Character = Player.Character
+
+	if not Character then
+		return
+	end
+
+	local Root = Character:FindFirstChild("HumanoidRootPart")
+	local EnemyRoot = GetEnemyRoot(Target)
+	local EnemyHumanoid = Target:FindFirstChildOfClass("Humanoid")
+
+	if not Root or not EnemyRoot or not EnemyHumanoid then
+		return
+	end
+
+	if EnemyHumanoid.Health <= 0 then
+		return
+	end
+
+	local Position =
+		EnemyRoot.Position
+		- EnemyRoot.CFrame.LookVector * AttackDistance
+
+	Root.CFrame = CFrame.lookAt(
+		Position,
+		EnemyRoot.Position
+	)
+
+	local Weapon = GetWeapon()
+
+	if Weapon then
+		pcall(function()
+			Weapon:Activate()
+		end)
+	end
+end
+
+task.spawn(function()
+	while Gui.Parent do
+
+		if AutoFarm then
+
+			local Target = FindTarget()
+
+			if Target then
+				Status.Text = "Target: " .. Target.Name
+				Status.TextColor3 = Color3.fromRGB(80, 255, 100)
+				Attack(Target)
+			else
+				Status.Text = "No Enemy In Range"
+				Status.TextColor3 = Color3.fromRGB(255, 220, 80)
+			end
+
+		else
+			Status.Text = "Status: OFF"
+			Status.TextColor3 = Color3.fromRGB(255, 80, 80)
+		end
+
+		task.wait(AttackDelay)
+	end
+end)
+
+Toggle.Activated:Connect(function()
+	AutoFarm = not AutoFarm
+
+	Toggle.Text =
+		AutoFarm and "AUTO FARM : ON"
+		or "AUTO FARM : OFF"
+end)
