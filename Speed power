@@ -1,0 +1,1669 @@
+--// 🌈 MOBILE PLAYER SETTINGS
+--// سرعة + قوة قفز + اختراق جدران + قفز لا نهائي + كشف ناس
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local SpeedValue = 18
+local JumpValue = 50
+
+local MAX_SPEED = 2500
+local MAX_JUMP = 3000
+
+local SpeedEnabled = false
+local JumpEnabled = false
+local NoclipEnabled = false
+local InfJumpEnabled = false
+local ESPEnabled = false
+
+local Objects = {}
+
+--==================================================
+-- RAINBOW
+--==================================================
+
+local function Rainbow()
+	return Color3.fromHSV((tick() % 5) / 5, 1, 1)
+end
+
+--==================================================
+-- CHARACTER
+--==================================================
+
+local function GetCharacter()
+	return LocalPlayer.Character
+end
+
+local function GetHumanoid()
+	local character = GetCharacter()
+	return character and character:FindFirstChildOfClass("Humanoid")
+end
+
+--==================================================
+-- MAIN GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "RainbowPlayerSettings"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = PlayerGui
+
+--==================================================
+-- OPEN / CLOSE BUTTON
+--==================================================
+
+local OpenButton = Instance.new("TextButton")
+
+OpenButton.Name = "OpenButton"
+
+OpenButton.Size =
+	UDim2.fromOffset(52,52)
+
+OpenButton.Position =
+	UDim2.new(0,15,0.5,-26)
+
+OpenButton.BackgroundColor3 =
+	Color3.fromRGB(25,25,30)
+
+OpenButton.Text = "−"
+
+OpenButton.TextColor3 =
+	Color3.new(1,1,1)
+
+OpenButton.TextSize = 30
+
+OpenButton.Font =
+	Enum.Font.GothamBold
+
+OpenButton.BorderSizePixel = 0
+
+OpenButton.AutoButtonColor = false
+
+OpenButton.Active = true
+
+OpenButton.Parent = Gui
+
+local OpenCorner =
+	Instance.new("UICorner")
+
+OpenCorner.CornerRadius =
+	UDim.new(0,16)
+
+OpenCorner.Parent =
+	OpenButton
+
+local OpenStroke =
+	Instance.new("UIStroke")
+
+OpenStroke.Thickness = 2
+
+OpenStroke.Parent =
+	OpenButton
+
+--==================================================
+-- MAIN MENU
+--==================================================
+
+local Menu =
+	Instance.new("Frame")
+
+Menu.Name =
+	"MainMenu"
+
+Menu.Size =
+	UDim2.fromOffset(240,390)
+
+Menu.Position =
+	UDim2.new(
+		0,
+		78,
+		0.5,
+		-195
+	)
+
+Menu.BackgroundColor3 =
+	Color3.fromRGB(18,18,23)
+
+Menu.BorderSizePixel = 0
+
+Menu.Active = true
+
+Menu.Parent = Gui
+
+local MenuCorner =
+	Instance.new("UICorner")
+
+MenuCorner.CornerRadius =
+	UDim.new(0,16)
+
+MenuCorner.Parent =
+	Menu
+
+local MenuStroke =
+	Instance.new("UIStroke")
+
+MenuStroke.Thickness = 2
+
+MenuStroke.Parent =
+	Menu
+
+--==================================================
+-- TITLE
+--==================================================
+
+local Title =
+	Instance.new("TextLabel")
+
+Title.Size =
+	UDim2.new(1,-20,0,38)
+
+Title.Position =
+	UDim2.fromOffset(10,6)
+
+Title.BackgroundTransparency = 1
+
+Title.Text =
+	"🌈  Player Settings"
+
+Title.TextColor3 =
+	Color3.new(1,1,1)
+
+Title.TextSize = 19
+
+Title.Font =
+	Enum.Font.GothamBold
+
+Title.Parent =
+	Menu
+
+--==================================================
+-- SMALL SUBTITLE
+--==================================================
+
+local Subtitle =
+	Instance.new("TextLabel")
+
+Subtitle.Size =
+	UDim2.new(1,-20,0,20)
+
+Subtitle.Position =
+	UDim2.fromOffset(10,40)
+
+Subtitle.BackgroundTransparency = 1
+
+Subtitle.Text =
+	"Mobile • Settings"
+
+Subtitle.TextColor3 =
+	Color3.fromRGB(170,170,180)
+
+Subtitle.TextSize = 11
+
+Subtitle.Font =
+	Enum.Font.Gotham
+
+Subtitle.Parent =
+	Menu
+
+--==================================================
+-- DRAG SYSTEM
+--==================================================
+
+local function MakeDraggable(object)
+
+	local dragging = false
+	local dragStart
+	local startPos
+
+	object.InputBegan:Connect(function(input)
+
+		if input.UserInputType ==
+			Enum.UserInputType.MouseButton1
+			or input.UserInputType ==
+			Enum.UserInputType.Touch then
+
+			dragging = true
+
+			dragStart =
+				input.Position
+
+			startPos =
+				object.Position
+
+			input.Changed:Connect(
+				function()
+
+					if input.UserInputState ==
+						Enum.UserInputState.End then
+
+						dragging = false
+
+					end
+				end
+			)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(
+		function(input)
+
+			if not dragging then
+				return
+			end
+
+			if input.UserInputType ==
+				Enum.UserInputType.MouseMovement
+				or input.UserInputType ==
+				Enum.UserInputType.Touch then
+
+				local delta =
+					input.Position -
+					dragStart
+
+				object.Position =
+					UDim2.new(
+						startPos.X.Scale,
+						startPos.X.Offset +
+							delta.X,
+
+						startPos.Y.Scale,
+						startPos.Y.Offset +
+							delta.Y
+					)
+			end
+		end
+	)
+end
+
+MakeDraggable(Menu)
+MakeDraggable(OpenButton)
+
+--==================================================
+-- BUTTON CREATOR
+--==================================================
+
+local function CreateButton(text,y)
+
+	local Button =
+		Instance.new("TextButton")
+
+	Button.Size =
+		UDim2.new(1,-30,0,38)
+
+	Button.Position =
+		UDim2.fromOffset(15,y)
+
+	Button.BackgroundColor3 =
+		Color3.fromRGB(42,42,50)
+
+	Button.BorderSizePixel = 0
+
+	Button.Text = text
+
+	Button.TextColor3 =
+		Color3.new(1,1,1)
+
+	Button.TextSize = 14
+
+	Button.Font =
+		Enum.Font.GothamBold
+
+	Button.AutoButtonColor = false
+
+	Button.Parent =
+		Menu
+
+	local Corner =
+		Instance.new("UICorner")
+
+	Corner.CornerRadius =
+		UDim.new(0,10)
+
+	Corner.Parent =
+		Button
+
+	return Button
+end
+
+--==================================================
+-- SPEED INPUT
+--==================================================
+
+local SpeedBox =
+	Instance.new("TextBox")
+
+SpeedBox.Size =
+	UDim2.new(1,-30,0,36)
+
+SpeedBox.Position =
+	UDim2.fromOffset(15,68)
+
+SpeedBox.BackgroundColor3 =
+	Color3.fromRGB(32,32,40)
+
+SpeedBox.BorderSizePixel = 0
+
+SpeedBox.PlaceholderText =
+	"اكتب السرعة"
+
+SpeedBox.Text = "18"
+
+SpeedBox.TextColor3 =
+	Color3.new(1,1,1)
+
+SpeedBox.PlaceholderColor3 =
+	Color3.fromRGB(150,150,160)
+
+SpeedBox.TextSize = 14
+
+SpeedBox.Font =
+	Enum.Font.GothamBold
+
+SpeedBox.ClearTextOnFocus = false
+
+SpeedBox.Parent =
+	Menu
+
+local SpeedCorner =
+	Instance.new("UICorner")
+
+SpeedCorner.CornerRadius =
+	UDim.new(0,10)
+
+SpeedCorner.Parent =
+	SpeedBox
+
+--==================================================
+-- BUTTON 1
+--==================================================
+
+local SpeedButton =
+	CreateButton(
+		"⚡ سرعة: OFF",
+		112
+	)
+
+--==================================================
+-- JUMP INPUT
+--==================================================
+
+local JumpBox =
+	Instance.new("TextBox")
+
+JumpBox.Size =
+	UDim2.new(1,-30,0,36)
+
+JumpBox.Position =
+	UDim2.fromOffset(15,158)
+
+JumpBox.BackgroundColor3 =
+	Color3.fromRGB(32,32,40)
+
+JumpBox.BorderSizePixel = 0
+
+JumpBox.PlaceholderText =
+	"اكتب قوة القفز"
+
+JumpBox.Text = "50"
+
+JumpBox.TextColor3 =
+	Color3.new(1,1,1)
+
+JumpBox.PlaceholderColor3 =
+	Color3.fromRGB(150,150,160)
+
+JumpBox.TextSize = 14
+
+JumpBox.Font =
+	Enum.Font.GothamBold
+
+JumpBox.ClearTextOnFocus = false
+
+JumpBox.Parent =
+	Menu
+
+local JumpCorner =
+	Instance.new("UICorner")
+
+JumpCorner.CornerRadius =
+	UDim.new(0,10)
+
+JumpCorner.Parent =
+	JumpBox
+
+--==================================================
+-- BUTTON 2
+--==================================================
+
+local JumpButton =
+	CreateButton(
+		"🦘 قوة قفز: OFF",
+		202
+	)
+
+--==================================================
+-- BUTTON 3
+--==================================================
+
+local NoclipButton =
+	CreateButton(
+		"👻 اختراق جدران: OFF",
+		247
+	)
+
+--==================================================
+-- BUTTON 4
+--==================================================
+
+local InfButton =
+	CreateButton(
+		"♾️ قفز لا نهائي: OFF",
+		292
+	)
+
+--==================================================
+-- BUTTON 5
+--==================================================
+
+local ESPButton =
+	CreateButton(
+		"👁️ كشف ناس: OFF",
+		337
+	)
+
+--==================================================
+-- OPEN / CLOSE
+--==================================================
+
+OpenButton.MouseButton1Click:Connect(
+	function()
+
+		Menu.Visible =
+			not Menu.Visible
+
+		if Menu.Visible then
+
+			OpenButton.Text = "−"
+
+		else
+
+			OpenButton.Text = "+"
+
+		end
+	end
+)--==================================================
+-- ⚡ سرعة
+--==================================================
+
+local function UpdateSpeed()
+
+	local number =
+		tonumber(SpeedBox.Text)
+
+	if not number then
+		number = SpeedValue
+	end
+
+	number =
+		math.clamp(
+			number,
+			1,
+			MAX_SPEED
+		)
+
+	SpeedValue = number
+
+	SpeedBox.Text =
+		tostring(number)
+
+	local humanoid =
+		GetHumanoid()
+
+	if humanoid and SpeedEnabled then
+
+		humanoid.WalkSpeed =
+			SpeedValue
+
+	end
+end
+
+SpeedBox.FocusLost:Connect(
+	UpdateSpeed
+)
+
+SpeedButton.MouseButton1Click:Connect(
+	function()
+
+		SpeedEnabled =
+			not SpeedEnabled
+
+		local humanoid =
+			GetHumanoid()
+
+		if humanoid then
+
+			if SpeedEnabled then
+
+				humanoid.WalkSpeed =
+					SpeedValue
+
+				SpeedButton.Text =
+					"⚡ سرعة: ON"
+
+			else
+
+				humanoid.WalkSpeed =
+					16
+
+				SpeedButton.Text =
+					"⚡ سرعة: OFF"
+
+			end
+		end
+	end
+)
+
+--==================================================
+-- 🦘 قوة قفز
+--==================================================
+
+local function UpdateJump()
+
+	local number =
+		tonumber(JumpBox.Text)
+
+	if not number then
+		number = JumpValue
+	end
+
+	number =
+		math.clamp(
+			number,
+			1,
+			MAX_JUMP
+		)
+
+	JumpValue = number
+
+	JumpBox.Text =
+		tostring(number)
+
+	local humanoid =
+		GetHumanoid()
+
+	if humanoid and JumpEnabled then
+
+		humanoid.UseJumpPower = true
+
+		humanoid.JumpPower =
+			JumpValue
+
+	end
+end
+
+JumpBox.FocusLost:Connect(
+	UpdateJump
+)
+
+JumpButton.MouseButton1Click:Connect(
+	function()
+
+		JumpEnabled =
+			not JumpEnabled
+
+		local humanoid =
+			GetHumanoid()
+
+		if humanoid then
+
+			humanoid.UseJumpPower = true
+
+			if JumpEnabled then
+
+				humanoid.JumpPower =
+					JumpValue
+
+				JumpButton.Text =
+					"🦘 قوة قفز: ON"
+
+			else
+
+				humanoid.JumpPower =
+					50
+
+				JumpButton.Text =
+					"🦘 قوة قفز: OFF"
+
+			end
+		end
+	end
+)
+
+--==================================================
+-- 👻 اختراق جدران
+--==================================================
+
+NoclipButton.MouseButton1Click:Connect(
+	function()
+
+		NoclipEnabled =
+			not NoclipEnabled
+
+		if NoclipEnabled then
+
+			NoclipButton.Text =
+				"👻 اختراق جدران: ON"
+
+		else
+
+			NoclipButton.Text =
+				"👻 اختراق جدران: OFF"
+
+		end
+	end
+)
+
+RunService.Stepped:Connect(
+	function()
+
+		if not NoclipEnabled then
+			return
+		end
+
+		local character =
+			GetCharacter()
+
+		if not character then
+			return
+		end
+
+		for _,part in ipairs(
+			character:GetDescendants()
+		) do
+
+			if part:IsA("BasePart") then
+
+				part.CanCollide = false
+
+			end
+		end
+	end
+)
+
+--==================================================
+-- ♾️ قفز لا نهائي
+--==================================================
+
+InfButton.MouseButton1Click:Connect(
+	function()
+
+		InfJumpEnabled =
+			not InfJumpEnabled
+
+		if InfJumpEnabled then
+
+			InfButton.Text =
+				"♾️ قفز لا نهائي: ON"
+
+		else
+
+			InfButton.Text =
+				"♾️ قفز لا نهائي: OFF"
+
+		end
+	end
+)
+
+UserInputService.JumpRequest:Connect(
+	function()
+
+		if not InfJumpEnabled then
+			return
+		end
+
+		local humanoid =
+			GetHumanoid()
+
+		if humanoid then
+
+			humanoid:ChangeState(
+				Enum.HumanoidStateType.Jumping
+			)
+
+		end
+	end
+)
+
+--==================================================
+-- 👁️ كشف ناس - بداية ESP
+--==================================================
+
+local function SetLine(
+	line,
+	from,
+	to,
+	thickness
+)
+
+	local difference =
+		to - from
+
+	local length =
+		difference.Magnitude
+
+	line.Position =
+		UDim2.fromOffset(
+			(from.X + to.X) / 2,
+			(from.Y + to.Y) / 2
+		)
+
+	line.Size =
+		UDim2.fromOffset(
+			length,
+			thickness
+		)
+
+	line.Rotation =
+		math.deg(
+			math.atan2(
+				difference.Y,
+				difference.X
+			)
+		)
+end
+
+--==================================================
+-- GET TOOLS
+--==================================================
+
+local function GetTools(player)
+
+	local tools = {}
+
+	local backpack =
+		player:FindFirstChildOfClass(
+			"Backpack"
+		)
+
+	if backpack then
+
+		for _,object in ipairs(
+			backpack:GetChildren()
+		) do
+
+			if object:IsA("Tool") then
+
+				table.insert(
+					tools,
+					object
+				)
+
+			end
+		end
+	end
+
+	local character =
+		player.Character
+
+	if character then
+
+		for _,object in ipairs(
+			character:GetChildren()
+		) do
+
+			if object:IsA("Tool") then
+
+				table.insert(
+					tools,
+					object
+				)
+
+			end
+		end
+	end
+
+	return tools
+end
+
+--==================================================
+-- TOOL IMAGES
+--==================================================
+
+local function UpdateToolImages(
+	data,
+	player,
+	rainbow
+)
+
+	for _,image in ipairs(
+		data.ToolImages
+	) do
+
+		image:Destroy()
+
+	end
+
+	table.clear(
+		data.ToolImages
+	)
+
+	local textures = {}
+
+	for _,tool in ipairs(
+		GetTools(player)
+	) do
+
+		local texture =
+			tool.TextureId
+
+		if texture and texture ~= "" then
+
+			table.insert(
+				textures,
+				texture
+			)
+
+		end
+	end
+
+	local count =
+		math.min(
+			#textures,
+			6
+		)
+
+	if count == 0 then
+
+		data.ToolsFrame.Visible =
+			false
+
+		return
+	end
+
+	data.ToolsFrame.Visible =
+		true
+
+	local imageSize = 24
+	local gap = 4
+
+	local totalWidth =
+		count * imageSize +
+		(count - 1) * gap
+
+	data.ToolsFrame.Size =
+		UDim2.fromOffset(
+			totalWidth,
+			imageSize
+		)
+
+	for i = 1,count do
+
+		local image =
+			Instance.new(
+				"ImageLabel"
+			)
+
+		image.BackgroundTransparency =
+			1
+
+		image.Size =
+			UDim2.fromOffset(
+				imageSize,
+				imageSize
+			)
+
+		image.Position =
+			UDim2.fromOffset(
+				(i - 1) *
+				(imageSize + gap),
+				0
+			)
+
+		image.Image =
+			textures[i]
+
+		image.ImageColor3 =
+			rainbow
+
+		image.Parent =
+			data.ToolsFrame
+
+		table.insert(
+			data.ToolImages,
+			image
+		)
+	end
+end--==================================================
+-- 👁️ CREATE ESP
+--==================================================
+
+local function CreateESP(player)
+
+	if player == LocalPlayer then
+		return
+	end
+
+	local container =
+		Instance.new("Frame")
+
+	container.Name =
+		"ESP_" .. player.Name
+
+	container.BackgroundTransparency = 1
+
+	container.Size =
+		UDim2.fromScale(1,1)
+
+	container.Visible = false
+
+	container.Parent = Gui
+
+	--==================================================
+	-- 2D BOX
+	--==================================================
+
+	local box =
+		Instance.new("Frame")
+
+	box.Name = "2DBox"
+
+	box.BackgroundTransparency = 1
+	box.BorderSizePixel = 0
+	box.Visible = false
+
+	box.Parent = container
+
+	local top =
+		Instance.new("Frame")
+
+	local bottom =
+		Instance.new("Frame")
+
+	local left =
+		Instance.new("Frame")
+
+	local right =
+		Instance.new("Frame")
+
+	for _,side in ipairs({
+		top,
+		bottom,
+		left,
+		right
+	}) do
+
+		side.BackgroundColor3 =
+			Color3.new(1,1,1)
+
+		side.BorderSizePixel = 0
+
+		side.Parent = box
+
+	end
+
+	top.Size =
+		UDim2.new(1,0,0,2)
+
+	bottom.Size =
+		UDim2.new(1,0,0,2)
+
+	bottom.Position =
+		UDim2.new(0,0,1,-2)
+
+	left.Size =
+		UDim2.new(0,2,1,0)
+
+	right.Size =
+		UDim2.new(0,2,1,0)
+
+	right.Position =
+		UDim2.new(1,-2,0,0)
+
+	--==================================================
+	-- TOOL IMAGES
+	--==================================================
+
+	local toolsFrame =
+		Instance.new("Frame")
+
+	toolsFrame.Name =
+		"ToolImages"
+
+	toolsFrame.BackgroundTransparency = 1
+
+	toolsFrame.AnchorPoint =
+		Vector2.new(0.5,0.5)
+
+	toolsFrame.Visible = false
+
+	toolsFrame.Parent =
+		container
+
+	--==================================================
+	-- NAME
+	--==================================================
+
+	local nameLabel =
+		Instance.new("TextLabel")
+
+	nameLabel.BackgroundTransparency = 1
+
+	nameLabel.TextSize = 10
+
+	nameLabel.TextColor3 =
+		Color3.new(1,1,1)
+
+	nameLabel.TextStrokeTransparency = 0
+
+	nameLabel.Font =
+		Enum.Font.GothamBold
+
+	nameLabel.AnchorPoint =
+		Vector2.new(0.5,0)
+
+	nameLabel.Parent =
+		container
+
+	--==================================================
+	-- HP
+	--==================================================
+
+	local healthLabel =
+		Instance.new("TextLabel")
+
+	healthLabel.BackgroundTransparency = 1
+
+	healthLabel.TextSize = 9
+
+	healthLabel.TextColor3 =
+		Color3.new(1,1,1)
+
+	healthLabel.TextStrokeTransparency = 0
+
+	healthLabel.Font =
+		Enum.Font.GothamBold
+
+	healthLabel.AnchorPoint =
+		Vector2.new(0.5,0)
+
+	healthLabel.Parent =
+		container
+
+	--==================================================
+	-- LINE
+	--==================================================
+
+	local line =
+		Instance.new("Frame")
+
+	line.BackgroundColor3 =
+		Color3.new(1,1,1)
+
+	line.BorderSizePixel = 0
+
+	line.AnchorPoint =
+		Vector2.new(0.5,0.5)
+
+	line.Visible = false
+
+	line.Parent =
+		container
+
+	Objects[player] = {
+
+		Container = container,
+
+		Box = box,
+
+		Top = top,
+		Bottom = bottom,
+		Left = left,
+		Right = right,
+
+		ToolsFrame = toolsFrame,
+
+		ToolImages = {},
+
+		Name = nameLabel,
+
+		Health = healthLabel,
+
+		Line = line,
+
+		LastToolUpdate = 0
+	}
+end
+
+--==================================================
+-- PLAYERS
+--==================================================
+
+for _,player in ipairs(
+	Players:GetPlayers()
+) do
+
+	CreateESP(player)
+
+end
+
+Players.PlayerAdded:Connect(
+	function(player)
+
+		CreateESP(player)
+
+	end
+)
+
+Players.PlayerRemoving:Connect(
+	function(player)
+
+		local data =
+			Objects[player]
+
+		if data then
+
+			data.Container:Destroy()
+
+			Objects[player] = nil
+
+		end
+	end
+)
+
+--==================================================
+-- ESP UPDATE
+--==================================================
+
+RunService.RenderStepped:Connect(
+	function()
+
+		local Camera =
+			workspace.CurrentCamera
+
+		if not Camera then
+			return
+		end
+
+		local rainbow =
+			Rainbow()
+
+		MenuStroke.Color =
+			rainbow
+
+		OpenStroke.Color =
+			rainbow
+
+		if not ESPEnabled then
+
+			for _,data in pairs(
+				Objects
+			) do
+
+				data.Container.Visible =
+					false
+
+				data.Line.Visible =
+					false
+
+			end
+
+			return
+		end
+
+		local myCharacter =
+			LocalPlayer.Character
+
+		local myRoot =
+			myCharacter
+			and myCharacter:FindFirstChild(
+				"HumanoidRootPart"
+			)
+
+		for player,data in pairs(
+			Objects
+		) do
+
+			local character =
+				player.Character
+
+			local root =
+				character
+				and character:FindFirstChild(
+					"HumanoidRootPart"
+				)
+
+			local head =
+				character
+				and character:FindFirstChild(
+					"Head"
+				)
+
+			local humanoid =
+				character
+				and character:FindFirstChildOfClass(
+					"Humanoid"
+				)
+
+			if not character
+				or not root
+				or not head
+				or not humanoid
+				or humanoid.Health <= 0 then
+
+				data.Container.Visible =
+					false
+
+				data.Line.Visible =
+					false
+
+				continue
+			end
+
+			--==================================================
+			-- SCREEN POSITION
+			--==================================================
+
+			local headPosition,
+				headVisible =
+				Camera:WorldToViewportPoint(
+					head.Position +
+					Vector3.new(0,0.4,0)
+				)
+
+			local footPosition,
+				footVisible =
+				Camera:WorldToViewportPoint(
+					root.Position -
+					Vector3.new(0,3,0)
+				)
+
+			if not headVisible
+				and not footVisible then
+
+				data.Container.Visible =
+					false
+
+				data.Line.Visible =
+					false
+
+				continue
+			end
+
+			data.Container.Visible =
+				true
+
+			--==================================================
+			-- BOX
+			--==================================================
+
+			local height =
+				math.abs(
+					headPosition.Y -
+					footPosition.Y
+				)
+
+			local width =
+				height * 0.55
+
+			local x =
+				headPosition.X
+
+			local y =
+				(
+					headPosition.Y +
+					footPosition.Y
+				) / 2
+
+			data.Box.Position =
+				UDim2.fromOffset(
+					x - width / 2,
+					y - height / 2
+				)
+
+			data.Box.Size =
+				UDim2.fromOffset(
+					width,
+					height
+				)
+
+			data.Box.Visible =
+				true
+
+			--==================================================
+			-- RAINBOW BOX
+			--==================================================
+
+			data.Top.BackgroundColor3 =
+				rainbow
+
+			data.Bottom.BackgroundColor3 =
+				rainbow
+
+			data.Left.BackgroundColor3 =
+				rainbow
+
+			data.Right.BackgroundColor3 =
+				rainbow
+
+			--==================================================
+			-- TOOLS
+			--==================================================
+
+			if tick() -
+				data.LastToolUpdate >
+				0.25 then
+
+				UpdateToolImages(
+					data,
+					player,
+					rainbow
+				)
+
+				data.LastToolUpdate =
+					tick()
+
+			else
+
+				for _,image in ipairs(
+					data.ToolImages
+				) do
+
+					image.ImageColor3 =
+						rainbow
+
+				end
+			end
+
+			local toolY =
+				y -
+				height / 2 -
+				45
+
+			data.ToolsFrame.Position =
+				UDim2.fromOffset(
+					x,
+					toolY
+				)
+
+			--==================================================
+			-- NAME
+			--==================================================
+
+			data.Name.Text =
+				player.DisplayName
+
+			data.Name.TextColor3 =
+				rainbow
+
+			data.Name.Position =
+				UDim2.fromOffset(
+					x,
+					toolY + 14
+				)
+
+			data.Name.Size =
+				UDim2.fromOffset(
+					120,
+					14
+				)
+
+			--==================================================
+			-- HP
+			--==================================================
+
+			local hp =
+				math.floor(
+					humanoid.Health
+				)
+
+			local maxHp =
+				math.floor(
+					humanoid.MaxHealth
+				)
+
+			data.Health.Text =
+				"HP: " ..
+				hp ..
+				"/" ..
+				maxHp
+
+			data.Health.TextColor3 =
+				rainbow
+
+			data.Health.Position =
+				UDim2.fromOffset(
+					x,
+					toolY + 28
+				)
+
+			data.Health.Size =
+				UDim2.fromOffset(
+					120,
+					14
+				)
+
+			--==================================================
+			-- LINE
+			--==================================================
+
+			if myRoot then
+
+				local startPosition =
+					Camera:WorldToViewportPoint(
+						myRoot.Position
+					)
+
+				local startVector =
+					Vector2.new(
+						startPosition.X,
+						startPosition.Y
+					)
+
+				local targetVector =
+					Vector2.new(
+						x,
+						y
+					)
+
+				SetLine(
+					data.Line,
+					startVector,
+					targetVector,
+					2
+				)
+
+				data.Line.BackgroundColor3 =
+					rainbow
+
+				data.Line.Visible =
+					true
+
+			else
+
+				data.Line.Visible =
+					false
+
+			end
+		end
+	end
+)--==================================================
+-- 👁️ كشف ناس
+--==================================================
+
+ESPButton.MouseButton1Click:Connect(
+	function()
+
+		ESPEnabled =
+			not ESPEnabled
+
+		if ESPEnabled then
+
+			ESPButton.Text =
+				"👁️ كشف ناس: ON"
+
+		else
+
+			ESPButton.Text =
+				"👁️ كشف ناس: OFF"
+
+		end
+	end
+)
+
+--==================================================
+-- 🌈 RAINBOW BUTTONS
+--==================================================
+
+RunService.RenderStepped:Connect(
+	function()
+
+		local rainbow =
+			Rainbow()
+
+		SpeedButton.BackgroundColor3 =
+			rainbow
+
+		JumpButton.BackgroundColor3 =
+			rainbow
+
+		NoclipButton.BackgroundColor3 =
+			rainbow
+
+		InfButton.BackgroundColor3 =
+			rainbow
+
+		ESPButton.BackgroundColor3 =
+			rainbow
+
+		MenuStroke.Color =
+			rainbow
+
+		OpenStroke.Color =
+			rainbow
+	end
+)
+
+--==================================================
+-- CHARACTER RESPAWN
+--==================================================
+
+LocalPlayer.CharacterAdded:Connect(
+	function(character)
+
+		task.wait(0.5)
+
+		local humanoid =
+			character:FindFirstChildOfClass(
+				"Humanoid"
+			)
+
+		if not humanoid then
+			return
+		end
+
+		if SpeedEnabled then
+
+			humanoid.WalkSpeed =
+				SpeedValue
+
+		end
+
+		if JumpEnabled then
+
+			humanoid.UseJumpPower =
+				true
+
+			humanoid.JumpPower =
+				JumpValue
+
+		end
+	end
+)
+
+--==================================================
+-- KEEP SPEED / JUMP
+--==================================================
+
+RunService.Heartbeat:Connect(
+	function()
+
+		local humanoid =
+			GetHumanoid()
+
+		if not humanoid then
+			return
+		end
+
+		if SpeedEnabled then
+
+			if humanoid.WalkSpeed ~=
+				SpeedValue then
+
+				humanoid.WalkSpeed =
+					SpeedValue
+
+			end
+		end
+
+		if JumpEnabled then
+
+			humanoid.UseJumpPower =
+				true
+
+			if humanoid.JumpPower ~=
+				JumpValue then
+
+				humanoid.JumpPower =
+					JumpValue
+
+			end
+		end
+	end
+)
+
+--==================================================
+-- RESET DEFAULT VALUES
+--==================================================
+
+SpeedBox.Text = "18"
+JumpBox.Text = "50"
+
+SpeedValue = 18
+JumpValue = 50
+
+--==================================================
+-- FINAL
+--==================================================
+
+print(
+	"🌈 Player Settings Loaded"
+)
+
+print(
+	"⚡ سرعة: 18 / Max 2500"
+)
+
+print(
+	"🦘 قوة قفز: 50 / Max 3000"
+)
+
+print(
+	"👻 اختراق جدران جاهز"
+)
+
+print(
+	"♾️ قفز لا نهائي جاهز"
+)
+
+print(
+	"👁️ كشف ناس جاهز"
+)
