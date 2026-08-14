@@ -1,0 +1,1411 @@
+--// 🌈 شَك بوينت PRO
+--// 📍 Spawn Point
+--// 🚀 انتقال إلى شَك بوينت
+--// 👤 انتقال إلى شخص
+--// 👁️ تجسس + رجوع للكاميرا
+--// 📷 صورة اللاعب
+--// 📱 MOBILE
+--// PART 1 / 2
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local LP = Players.LocalPlayer
+
+local Character
+local RootPart
+local MyHumanoid
+
+local CheckPoint = nil
+local CheckPointSaved = false
+
+local SelectedPlayer = nil
+local MenuOpen = false
+local Spectating = false
+local RainbowTime = 0
+
+--==================================================
+-- CHARACTER
+--==================================================
+
+local function SetupCharacter(Char)
+
+	Character = Char
+
+	MyHumanoid = Char:WaitForChild(
+		"Humanoid",
+		10
+	)
+
+	RootPart = Char:WaitForChild(
+		"HumanoidRootPart",
+		10
+	)
+
+	if CheckPointSaved and CheckPoint and RootPart then
+		task.wait(0.35)
+
+		if RootPart then
+			RootPart.CFrame =
+				CheckPoint + Vector3.new(0,3,0)
+		end
+	end
+end
+
+if LP.Character then
+	task.spawn(SetupCharacter, LP.Character)
+end
+
+LP.CharacterAdded:Connect(function(Char)
+
+	SetupCharacter(Char)
+
+	Spectating = false
+
+	task.wait(0.15)
+
+	local Camera = workspace.CurrentCamera
+
+	if Camera and MyHumanoid then
+		Camera.CameraType =
+			Enum.CameraType.Custom
+
+		Camera.CameraSubject =
+			MyHumanoid
+	end
+end)
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "CheckPointMobile"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = LP:WaitForChild("PlayerGui")
+
+--==================================================
+-- OPEN BUTTON
+--==================================================
+
+local OpenButton = Instance.new("TextButton")
+
+OpenButton.Name = "OpenButton"
+
+OpenButton.Size =
+	UDim2.fromOffset(58,58)
+
+OpenButton.Position =
+	UDim2.new(0,15,0.5,-29)
+
+OpenButton.BackgroundColor3 =
+	Color3.fromRGB(25,25,32)
+
+OpenButton.Text = "+"
+OpenButton.TextColor3 =
+	Color3.new(1,1,1)
+
+OpenButton.TextSize = 32
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.AutoButtonColor = false
+OpenButton.ZIndex = 20
+OpenButton.Parent = Gui
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius =
+	UDim.new(1,0)
+OpenCorner.Parent = OpenButton
+
+local OpenStroke = Instance.new("UIStroke")
+OpenStroke.Thickness = 2.5
+OpenStroke.Parent = OpenButton
+
+--==================================================
+-- MAIN MENU
+--==================================================
+
+local Main = Instance.new("Frame")
+
+Main.Name = "CheckPointMenu"
+
+Main.Size =
+	UDim2.fromOffset(285,430)
+
+Main.Position =
+	UDim2.new(0.5,-142,0.5,-215)
+
+Main.BackgroundColor3 =
+	Color3.fromRGB(16,16,22)
+
+Main.BorderSizePixel = 0
+Main.Visible = false
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius =
+	UDim.new(0,18)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0.15
+MainStroke.Parent = Main
+
+local MainScale = Instance.new("UIScale")
+MainScale.Scale = 0.75
+MainScale.Parent = Main
+
+--==================================================
+-- HEADER
+--==================================================
+
+local Header = Instance.new("Frame")
+
+Header.Size =
+	UDim2.new(1,0,0,58)
+
+Header.BackgroundColor3 =
+	Color3.fromRGB(23,23,30)
+
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius =
+	UDim.new(0,18)
+HeaderCorner.Parent = Header
+
+local Title = Instance.new("TextLabel")
+
+Title.BackgroundTransparency = 1
+
+Title.Position =
+	UDim2.fromOffset(14,5)
+
+Title.Size =
+	UDim2.new(1,-65,0,26)
+
+Title.Text =
+	"🌈  شَك بوينت"
+
+Title.TextColor3 =
+	Color3.new(1,1,1)
+
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+Title.Parent = Header
+
+local SubTitle = Instance.new("TextLabel")
+
+SubTitle.BackgroundTransparency = 1
+
+SubTitle.Position =
+	UDim2.fromOffset(15,32)
+
+SubTitle.Size =
+	UDim2.new(1,-65,0,17)
+
+SubTitle.Text =
+	"نقطة رجوع • انتقال • تجسس"
+
+SubTitle.TextColor3 =
+	Color3.fromRGB(140,140,155)
+
+SubTitle.TextSize = 10
+SubTitle.Font = Enum.Font.Gotham
+SubTitle.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+SubTitle.Parent = Header
+
+--==================================================
+-- CLOSE
+--==================================================
+
+local Close = Instance.new("TextButton")
+
+Close.Size =
+	UDim2.fromOffset(36,36)
+
+Close.Position =
+	UDim2.new(1,-46,0,11)
+
+Close.BackgroundColor3 =
+	Color3.fromRGB(43,43,52)
+
+Close.Text = "×"
+
+Close.TextColor3 =
+	Color3.new(1,1,1)
+
+Close.TextSize = 24
+Close.Font = Enum.Font.GothamBold
+Close.AutoButtonColor = false
+
+Close.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius =
+	UDim.new(0,10)
+CloseCorner.Parent = Close
+
+--==================================================
+-- CONTENT
+--==================================================
+
+local Content = Instance.new("ScrollingFrame")
+
+Content.Position =
+	UDim2.fromOffset(10,66)
+
+Content.Size =
+	UDim2.new(1,-20,1,-76)
+
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+
+Content.ScrollBarThickness = 3
+Content.ScrollBarImageTransparency = 0.3
+
+Content.CanvasSize =
+	UDim2.new(0,0,0,0)
+
+Content.AutomaticCanvasSize =
+	Enum.AutomaticSize.Y
+
+Content.Parent = Main
+
+local Layout = Instance.new("UIListLayout")
+
+Layout.Padding =
+	UDim.new(0,7)
+
+Layout.HorizontalAlignment =
+	Enum.HorizontalAlignment.Center
+
+Layout.SortOrder =
+	Enum.SortOrder.LayoutOrder
+
+Layout.Parent = Content
+
+--==================================================
+-- STATUS
+--==================================================
+
+local Status = Instance.new("TextLabel")
+
+Status.Size =
+	UDim2.new(1,-2,0,30)
+
+Status.BackgroundColor3 =
+	Color3.fromRGB(27,27,36)
+
+Status.Text =
+	"●  لا يوجد شَك بوينت"
+
+Status.TextColor3 =
+	Color3.fromRGB(160,160,175)
+
+Status.TextSize = 11
+Status.Font = Enum.Font.GothamMedium
+Status.Parent = Content
+
+local StatusCorner = Instance.new("UICorner")
+StatusCorner.CornerRadius =
+	UDim.new(0,10)
+StatusCorner.Parent = Status
+
+--==================================================
+-- BUTTON CREATOR
+--==================================================
+
+local function CreateButton(Text)
+
+	local B = Instance.new("TextButton")
+
+	B.Size =
+		UDim2.new(1,-2,0,43)
+
+	B.BackgroundColor3 =
+		Color3.fromRGB(30,30,39)
+
+	B.Text = Text
+
+	B.TextColor3 =
+		Color3.new(1,1,1)
+
+	B.TextSize = 12
+	B.Font = Enum.Font.GothamBold
+
+	B.AutoButtonColor = false
+
+	B.Parent = Content
+
+	local C = Instance.new("UICorner")
+
+	C.CornerRadius =
+		UDim.new(0,11)
+
+	C.Parent = B
+
+	local S = Instance.new("UIStroke")
+
+	S.Thickness = 1
+	S.Transparency = 0.5
+
+	S.Parent = B
+
+	return B,S
+end
+
+--==================================================
+-- CHECKPOINT BUTTONS
+--==================================================
+
+local SetCP, SetStroke =
+	CreateButton("📍  شَك بوينت")
+
+local GoCP, GoStroke =
+	CreateButton("🚀  انتقال إلى شَك بوينت")
+
+local DeleteCP, DeleteStroke =
+	CreateButton("🗑️  حذف شَك بوينت")
+
+--==================================================
+-- DIVIDER
+--==================================================
+
+local Divider = Instance.new("Frame")
+
+Divider.Size =
+	UDim2.new(1,-12,0,1)
+
+Divider.BackgroundColor3 =
+	Color3.fromRGB(55,55,65)
+
+Divider.BorderSizePixel = 0
+
+Divider.Parent = Content
+
+--==================================================
+-- PLAYER TITLE
+--==================================================
+
+local PlayerTitle = Instance.new("TextLabel")
+
+PlayerTitle.Size =
+	UDim2.new(1,-2,0,27)
+
+PlayerTitle.BackgroundTransparency = 1
+
+PlayerTitle.Text =
+	"👤  انتقال إلى شخص"
+
+PlayerTitle.TextColor3 =
+	Color3.new(1,1,1)
+
+PlayerTitle.TextSize = 13
+PlayerTitle.Font = Enum.Font.GothamBold
+
+PlayerTitle.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+PlayerTitle.Parent = Content
+
+--==================================================
+-- SEARCH
+--==================================================
+
+local Search = Instance.new("TextBox")
+
+Search.Size =
+	UDim2.new(1,-2,0,42)
+
+Search.BackgroundColor3 =
+	Color3.fromRGB(28,28,37)
+
+Search.PlaceholderText =
+	"🔎  اكتب اسم الشخص..."
+
+Search.PlaceholderColor3 =
+	Color3.fromRGB(125,125,140)
+
+Search.Text = ""
+
+Search.TextColor3 =
+	Color3.new(1,1,1)
+
+Search.TextSize = 11
+Search.Font = Enum.Font.Gotham
+
+Search.ClearTextOnFocus = false
+
+Search.Parent = Content
+
+local SearchCorner = Instance.new("UICorner")
+
+SearchCorner.CornerRadius =
+	UDim.new(0,11)
+
+SearchCorner.Parent = Search
+
+local SearchStroke = Instance.new("UIStroke")
+
+SearchStroke.Thickness = 1
+SearchStroke.Transparency = 0.5
+
+SearchStroke.Parent = Search
+
+--==================================================
+-- PLAYER PREVIEW
+--==================================================
+
+local Preview = Instance.new("Frame")
+
+Preview.Size =
+	UDim2.new(1,-2,0,72)
+
+Preview.BackgroundColor3 =
+	Color3.fromRGB(24,24,32)
+
+Preview.BorderSizePixel = 0
+
+Preview.Visible = false
+
+Preview.Parent = Content
+
+local PreviewCorner = Instance.new("UICorner")
+
+PreviewCorner.CornerRadius =
+	UDim.new(0,12)
+
+PreviewCorner.Parent = Preview
+
+local Avatar = Instance.new("ImageLabel")
+
+Avatar.Size =
+	UDim2.fromOffset(58,58)
+
+Avatar.Position =
+	UDim2.fromOffset(7,7)
+
+Avatar.BackgroundColor3 =
+	Color3.fromRGB(35,35,45)
+
+Avatar.Image = ""
+
+Avatar.Parent = Preview
+
+local AvatarCorner = Instance.new("UICorner")
+
+AvatarCorner.CornerRadius =
+	UDim.new(0,11)
+
+AvatarCorner.Parent = Avatar
+
+local AvatarStroke = Instance.new("UIStroke")
+
+AvatarStroke.Thickness = 1.5
+AvatarStroke.Transparency = 0.35
+
+AvatarStroke.Parent = Avatar
+
+local PreviewName = Instance.new("TextLabel")
+
+PreviewName.BackgroundTransparency = 1
+
+PreviewName.Position =
+	UDim2.fromOffset(75,10)
+
+PreviewName.Size =
+	UDim2.new(1,-82,0,24)
+
+PreviewName.Text =
+	"لا يوجد شخص"
+
+PreviewName.TextColor3 =
+	Color3.new(1,1,1)
+
+PreviewName.TextSize = 12
+PreviewName.Font = Enum.Font.GothamBold
+
+PreviewName.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+PreviewName.Parent = Preview
+
+local PreviewUser = Instance.new("TextLabel")
+
+PreviewUser.BackgroundTransparency = 1
+
+PreviewUser.Position =
+	UDim2.fromOffset(75,36)
+
+PreviewUser.Size =
+	UDim2.new(1,-82,0,18)
+
+PreviewUser.Text = ""
+
+PreviewUser.TextColor3 =
+	Color3.fromRGB(145,145,160)
+
+PreviewUser.TextSize = 10
+PreviewUser.Font = Enum.Font.Gotham
+
+PreviewUser.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+PreviewUser.Parent = Preview
+
+--==================================================
+-- SELECTED
+--==================================================
+
+local SelectedLabel = Instance.new("TextLabel")
+
+SelectedLabel.Size =
+	UDim2.new(1,-2,0,23)
+
+SelectedLabel.BackgroundTransparency = 1
+
+SelectedLabel.Text =
+	"المحدد: لا يوجد"
+
+SelectedLabel.TextColor3 =
+	Color3.fromRGB(150,150,165)
+
+SelectedLabel.TextSize = 10
+SelectedLabel.Font = Enum.Font.GothamMedium
+
+SelectedLabel.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+SelectedLabel.Parent = Content
+
+--==================================================
+-- PLAYER LIST
+--==================================================
+
+local PlayerList = Instance.new("ScrollingFrame")
+
+PlayerList.Size =
+	UDim2.new(1,-2,0,135)
+
+PlayerList.BackgroundColor3 =
+	Color3.fromRGB(22,22,30)
+
+PlayerList.BorderSizePixel = 0
+
+PlayerList.ScrollBarThickness = 3
+PlayerList.ScrollBarImageTransparency = 0.25
+
+PlayerList.CanvasSize =
+	UDim2.new(0,0,0,0)
+
+PlayerList.AutomaticCanvasSize =
+	Enum.AutomaticSize.Y
+
+PlayerList.Parent = Content
+
+local PlayerCorner = Instance.new("UICorner")
+
+PlayerCorner.CornerRadius =
+	UDim.new(0,12)
+
+PlayerCorner.Parent = PlayerList
+
+local PlayerPadding = Instance.new("UIPadding")
+
+PlayerPadding.PaddingTop =
+	UDim.new(0,5)
+
+PlayerPadding.PaddingBottom =
+	UDim.new(0,5)
+
+PlayerPadding.PaddingLeft =
+	UDim.new(0,5)
+
+PlayerPadding.PaddingRight =
+	UDim.new(0,5)
+
+PlayerPadding.Parent = PlayerList
+
+local PlayerLayout = Instance.new("UIListLayout")
+
+PlayerLayout.Padding =
+	UDim.new(0,5)
+
+PlayerLayout.SortOrder =
+	Enum.SortOrder.Name
+
+PlayerLayout.Parent = PlayerList
+
+--==================================================
+-- PLAYER BUTTONS
+--==================================================
+
+local GoPlayer, GoPlayerStroke =
+	CreateButton("🚀  انتقال إلى الشخص")
+
+local SpectateButton, SpectateStroke =
+	CreateButton("👁️  تجسس")
+
+--==================================================
+-- PLAYER PREVIEW
+--==================================================
+
+local function ShowPlayerPreview(Target)
+
+	if not Target then
+		return
+	end
+
+	SelectedPlayer = Target
+
+	Preview.Visible = true
+
+	PreviewName.Text =
+		Target.DisplayName
+
+	PreviewUser.Text =
+		"@" .. Target.Name
+
+	SelectedLabel.Text =
+		"المحدد: " .. Target.DisplayName
+
+	SelectedLabel.TextColor3 =
+		Color3.fromRGB(90,200,255)
+
+	Search.Text =
+		Target.Name
+
+	task.spawn(function()
+
+		local Success,Image =
+			pcall(function()
+
+				return Players:GetUserThumbnailAsync(
+					Target.UserId,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size150x150
+				)
+
+			end)
+
+		if Success and Image then
+			Avatar.Image = Image
+		end
+	end)
+end
+
+--==================================================
+-- FIND PLAYER
+--==================================================
+
+local function FindPlayer(Text)
+
+	Text = string.lower(Text or "")
+
+	Text = string.gsub(
+		Text,
+		"^%s+",
+		""
+	)
+
+	Text = string.gsub(
+		Text,
+		"%s+$",
+		""
+	)
+
+	if Text == "" then
+		return nil
+	end
+
+	for _,P in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if P ~= LP then
+
+			if string.lower(P.Name) == Text
+			or string.lower(P.DisplayName) == Text then
+
+				return P
+			end
+		end
+	end
+
+	for _,P in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if P ~= LP then
+
+			if string.sub(
+				string.lower(P.Name),
+				1,
+				#Text
+			) == Text
+
+			or string.sub(
+				string.lower(P.DisplayName),
+				1,
+				#Text
+			) == Text then
+
+				return P
+			end
+		end
+	end
+
+	return nil
+end
+
+--==================================================
+-- REFRESH PLAYERS
+--==================================================
+
+local function RefreshPlayers()
+
+	for _,Child in ipairs(
+		PlayerList:GetChildren()
+	) do
+
+		if Child:IsA("TextButton") then
+			Child:Destroy()
+		end
+	end
+
+	for _,Target in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if Target ~= LP then
+
+			local B = Instance.new("TextButton")
+
+			B.Name = Target.Name
+
+			B.Size =
+				UDim2.new(1,-10,0,42)
+
+			B.BackgroundColor3 =
+				Color3.fromRGB(31,31,41)
+
+			B.Text =
+				"👤  " ..
+				Target.DisplayName ..
+				"   @" ..
+				Target.Name
+
+			B.TextColor3 =
+				Color3.new(1,1,1)
+
+			B.TextSize = 10
+			B.Font = Enum.Font.GothamMedium
+
+			B.TextXAlignment =
+				Enum.TextXAlignment.Left
+
+			B.AutoButtonColor = false
+			B.Parent = PlayerList
+
+			local Padding = Instance.new("UIPadding")
+
+			Padding.PaddingLeft =
+				UDim.new(0,10)
+
+			Padding.Parent = B
+
+			local Corner = Instance.new("UICorner")
+
+			Corner.CornerRadius =
+				UDim.new(0,10)
+
+			Corner.Parent = B
+
+			B.Activated:Connect(
+				function()
+					ShowPlayerPreview(Target)
+				end
+			)
+		end
+	end
+end
+
+RefreshPlayers()
+
+Players.PlayerAdded:Connect(function()
+
+	task.wait(0.1)
+
+	RefreshPlayers()
+end)
+
+Players.PlayerRemoving:Connect(function(P)
+
+	if SelectedPlayer == P then
+
+		SelectedPlayer = nil
+
+		Preview.Visible = false
+
+		Search.Text = ""
+
+		SelectedLabel.Text =
+			"المحدد: لا يوجد"
+
+		SelectedLabel.TextColor3 =
+			Color3.fromRGB(
+				150,150,165
+			)
+	end
+
+	RefreshPlayers()
+end)
+
+--==================================================
+-- SEARCH
+--==================================================
+
+Search.FocusLost:Connect(function()
+
+	local Target =
+		FindPlayer(Search.Text)
+
+	if Target then
+
+		ShowPlayerPreview(Target)
+
+	else
+
+		SelectedPlayer = nil
+
+		Preview.Visible = false
+
+		SelectedLabel.Text =
+			"⚠  لم يتم العثور على الشخص"
+
+		SelectedLabel.TextColor3 =
+			Color3.fromRGB(
+				255,170,80
+			)
+	end
+end)--==================================================
+-- 📍 SAVE CHECKPOINT
+--==================================================
+
+SetCP.Activated:Connect(function()
+
+	if not RootPart then
+
+		Status.Text =
+			"⚠  الشخصية غير جاهزة"
+
+		Status.TextColor3 =
+			Color3.fromRGB(
+				255,175,70
+			)
+
+		return
+	end
+
+	CheckPoint =
+		RootPart.CFrame
+
+	CheckPointSaved = true
+
+	Status.Text =
+		"●  تم حفظ شَك بوينت"
+
+	Status.TextColor3 =
+		Color3.fromRGB(
+			80,255,145
+		)
+
+	SetCP.Text =
+		"✅  تم الحفظ"
+
+	task.wait(0.8)
+
+	SetCP.Text =
+		"📍  شَك بوينت"
+end)
+
+--==================================================
+-- 🚀 TELEPORT CHECKPOINT
+--==================================================
+
+GoCP.Activated:Connect(function()
+
+	if not CheckPointSaved
+		or not CheckPoint then
+
+		Status.Text =
+			"⚠  احفظ شَك بوينت أولاً"
+
+		Status.TextColor3 =
+			Color3.fromRGB(
+				255,175,70
+			)
+
+		return
+	end
+
+	if not RootPart then
+		return
+	end
+
+	RootPart.AssemblyLinearVelocity =
+		Vector3.zero
+
+	RootPart.AssemblyAngularVelocity =
+		Vector3.zero
+
+	RootPart.CFrame =
+		CheckPoint +
+		Vector3.new(0,3,0)
+
+	Status.Text =
+		"🚀  تم الانتقال"
+
+	Status.TextColor3 =
+		Color3.fromRGB(
+			90,200,255
+		)
+end)
+
+--==================================================
+-- 🗑️ DELETE CHECKPOINT
+--==================================================
+
+DeleteCP.Activated:Connect(function()
+
+	CheckPoint = nil
+
+	CheckPointSaved = false
+
+	Status.Text =
+		"●  لا يوجد شَك بوينت"
+
+	Status.TextColor3 =
+		Color3.fromRGB(
+			160,160,175
+		)
+
+	SetCP.Text =
+		"📍  شَك بوينت"
+end)
+
+--==================================================
+-- 🚀 TELEPORT TO PLAYER
+--==================================================
+
+GoPlayer.Activated:Connect(function()
+
+	if not SelectedPlayer then
+
+		Status.Text =
+			"⚠  اختر شخصاً أولاً"
+
+		Status.TextColor3 =
+			Color3.fromRGB(
+				255,175,70
+			)
+
+		return
+	end
+
+	if SelectedPlayer == LP then
+
+		Status.Text =
+			"⚠  هذا أنت"
+
+		Status.TextColor3 =
+			Color3.fromRGB(
+				255,175,70
+			)
+
+		return
+	end
+
+	local TargetCharacter =
+		SelectedPlayer.Character
+
+	local TargetRoot =
+		TargetCharacter
+		and TargetCharacter:FindFirstChild(
+			"HumanoidRootPart"
+		)
+
+	if not TargetRoot
+		or not RootPart then
+
+		Status.Text =
+			"⚠  الشخص غير جاهز"
+
+		Status.TextColor3 =
+			Color3.fromRGB(
+				255,175,70
+			)
+
+		return
+	end
+
+	RootPart.AssemblyLinearVelocity =
+		Vector3.zero
+
+	RootPart.AssemblyAngularVelocity =
+		Vector3.zero
+
+	RootPart.CFrame =
+		TargetRoot.CFrame +
+		Vector3.new(0,3,0)
+
+	Status.Text =
+		"🚀  انتقلت إلى " ..
+		SelectedPlayer.DisplayName
+
+	Status.TextColor3 =
+		Color3.fromRGB(
+			90,200,255
+		)
+end)
+
+--==================================================
+-- 👁️ SPECTATE
+--==================================================
+
+local function StopSpectate()
+
+	Spectating = false
+
+	SpectateButton.Text =
+		"👁️  تجسس"
+
+	local Camera =
+		workspace.CurrentCamera
+
+	-- إرجاع الكاميرا لشخصيتك
+	if Camera and MyHumanoid then
+
+		Camera.CameraType =
+			Enum.CameraType.Custom
+
+		Camera.CameraSubject =
+			MyHumanoid
+
+	elseif Camera and Character then
+
+		local Hum =
+			Character:FindFirstChildOfClass(
+				"Humanoid"
+			)
+
+		if Hum then
+
+			MyHumanoid = Hum
+
+			Camera.CameraType =
+				Enum.CameraType.Custom
+
+			Camera.CameraSubject =
+				Hum
+		end
+	end
+
+	Status.Text =
+		"👁️  تم إيقاف التجسس"
+
+	Status.TextColor3 =
+		Color3.fromRGB(
+			160,160,175
+		)
+end
+
+local function StartSpectate()
+
+	if not SelectedPlayer then
+
+		Status.Text =
+			"⚠  اختر شخصاً أولاً"
+
+		Status.TextColor3 =
+			Color3.fromRGB(
+				255,175,70
+			)
+
+		return
+	end
+
+	local TargetCharacter =
+		SelectedPlayer.Character
+
+	local TargetHumanoid =
+		TargetCharacter
+		and TargetCharacter:FindFirstChildOfClass(
+			"Humanoid"
+		)
+
+	if not TargetHumanoid then
+
+		Status.Text =
+			"⚠  الشخص غير جاهز"
+
+		Status.TextColor3 =
+			Color3.fromRGB(
+				255,175,70
+			)
+
+		return
+	end
+
+	local Camera =
+		workspace.CurrentCamera
+
+	Spectating = true
+
+	Camera.CameraType =
+		Enum.CameraType.Custom
+
+	Camera.CameraSubject =
+		TargetHumanoid
+
+	SpectateButton.Text =
+		"👁️  إيقاف التجسس"
+
+	Status.Text =
+		"👁️  تتجسس على " ..
+		SelectedPlayer.DisplayName
+
+	Status.TextColor3 =
+		Color3.fromRGB(
+			170,120,255
+		)
+end
+
+SpectateButton.Activated:Connect(function()
+
+	if Spectating then
+
+		StopSpectate()
+
+	else
+
+		StartSpectate()
+	end
+end)
+
+--==================================================
+-- 📱 DRAG SYSTEM
+--==================================================
+
+local function MakeDraggable(
+	Object,
+	Handle
+)
+
+	local Dragging = false
+	local DragStart
+	local StartPosition
+
+	Handle.InputBegan:Connect(
+		function(Input)
+
+			if Input.UserInputType ==
+				Enum.UserInputType.MouseButton1
+
+			or Input.UserInputType ==
+				Enum.UserInputType.Touch then
+
+				Dragging = true
+
+				DragStart =
+					Input.Position
+
+				StartPosition =
+					Object.Position
+
+				Input.Changed:Connect(
+					function()
+
+						if Input.UserInputState ==
+							Enum.UserInputState.End then
+
+							Dragging = false
+						end
+					end
+				)
+			end
+		end
+	)
+
+	Handle.InputChanged:Connect(
+		function(Input)
+
+			if not Dragging then
+				return
+			end
+
+			if Input.UserInputType ==
+				Enum.UserInputType.MouseMovement
+
+			or Input.UserInputType ==
+				Enum.UserInputType.Touch then
+
+				local Delta =
+					Input.Position -
+					DragStart
+
+				Object.Position =
+					UDim2.new(
+						StartPosition.X.Scale,
+						StartPosition.X.Offset +
+							Delta.X,
+
+						StartPosition.Y.Scale,
+						StartPosition.Y.Offset +
+							Delta.Y
+					)
+			end
+		end
+	)
+end
+
+-- الزر نفسه يتحرك
+MakeDraggable(
+	OpenButton,
+	OpenButton
+)
+
+-- القائمة تتحرك من العنوان
+MakeDraggable(
+	Main,
+	Header
+)
+
+--==================================================
+-- OPEN / CLOSE
+--==================================================
+
+local function OpenMenu()
+
+	MenuOpen = true
+
+	Main.Visible = true
+
+	MainScale.Scale = 0.75
+
+	RefreshPlayers()
+
+	TweenService:Create(
+		MainScale,
+		TweenInfo.new(
+			0.25,
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.Out
+		),
+		{
+			Scale = 1
+		}
+	):Play()
+
+	OpenButton.Text = "×"
+end
+
+local function CloseMenu()
+
+	MenuOpen = false
+
+	TweenService:Create(
+		MainScale,
+		TweenInfo.new(0.14),
+		{
+			Scale = 0.75
+		}
+	):Play()
+
+	task.wait(0.12)
+
+	Main.Visible = false
+
+	OpenButton.Text = "+"
+end
+
+OpenButton.Activated:Connect(function()
+
+	if MenuOpen then
+
+		CloseMenu()
+
+	else
+
+		OpenMenu()
+	end
+end)
+
+Close.Activated:Connect(function()
+
+	if MenuOpen then
+		CloseMenu()
+	end
+end)
+
+--==================================================
+-- 🌈 RAINBOW
+--==================================================
+
+RunService.RenderStepped:Connect(
+	function(dt)
+
+		RainbowTime +=
+			dt * 0.35
+
+		local C1 =
+			Color3.fromHSV(
+				RainbowTime % 1,
+				0.9,
+				1
+			)
+
+		local C2 =
+			Color3.fromHSV(
+				(RainbowTime + 0.35) % 1,
+				0.8,
+				1
+			)
+
+		OpenStroke.Color =
+			C1
+
+		MainStroke.Color =
+			C2
+
+		SetStroke.Color =
+			C1
+
+		GoPlayerStroke.Color =
+			C2
+
+		SpectateStroke.Color =
+			C1
+
+		OpenButton.BackgroundColor3 =
+			Color3.fromHSV(
+				(RainbowTime + 0.5) % 1,
+				0.65,
+				0.28
+			)
+	end
+)
+
+print(
+	"🌈 شَك بوينت PRO جاهز!"
+)
