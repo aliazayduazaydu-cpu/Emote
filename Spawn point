@@ -1,0 +1,1268 @@
+--// 🌈 CHECK POINT PRO
+--// PART 1 / 2
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local LP = Players.LocalPlayer
+
+local Character
+local RootPart
+local Humanoid
+
+local CheckPoints = {}
+local SelectedCheckPoint = nil
+local SelectedPlayer = nil
+
+local Spectating = false
+local MenuOpen = false
+local RainbowTime = 0
+
+--==================================================
+-- CHARACTER
+--==================================================
+
+local function SetupCharacter(char)
+	Character = char
+	Humanoid = char:WaitForChild("Humanoid",10)
+	RootPart = char:WaitForChild("HumanoidRootPart",10)
+end
+
+if LP.Character then
+	task.spawn(function()
+		SetupCharacter(LP.Character)
+	end)
+end
+
+LP.CharacterAdded:Connect(function(char)
+	SetupCharacter(char)
+
+	Spectating = false
+
+	task.wait(0.2)
+
+	local Camera = workspace.CurrentCamera
+
+	if Camera and Humanoid then
+		Camera.CameraType = Enum.CameraType.Custom
+		Camera.CameraSubject = Humanoid
+	end
+end)
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "CheckPointPRO"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = LP:WaitForChild("PlayerGui")
+
+--==================================================
+-- OPEN BUTTON
+--==================================================
+
+local OpenButton = Instance.new("TextButton")
+OpenButton.Size = UDim2.fromOffset(58,58)
+OpenButton.Position = UDim2.new(0,15,0.5,-29)
+OpenButton.BackgroundColor3 = Color3.fromRGB(25,25,32)
+OpenButton.Text = "+"
+OpenButton.TextColor3 = Color3.new(1,1,1)
+OpenButton.TextSize = 32
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.AutoButtonColor = false
+OpenButton.ZIndex = 50
+OpenButton.Parent = Gui
+
+local OC = Instance.new("UICorner")
+OC.CornerRadius = UDim.new(1,0)
+OC.Parent = OpenButton
+
+local OS = Instance.new("UIStroke")
+OS.Thickness = 2.5
+OS.Parent = OpenButton
+
+--==================================================
+-- MAIN
+--==================================================
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(320,500)
+Main.Position = UDim2.new(0.5,-160,0.5,-250)
+Main.BackgroundColor3 = Color3.fromRGB(15,15,21)
+Main.BorderSizePixel = 0
+Main.Visible = false
+Main.ZIndex = 10
+Main.Parent = Gui
+
+local MC = Instance.new("UICorner")
+MC.CornerRadius = UDim.new(0,18)
+MC.Parent = Main
+
+local MS = Instance.new("UIStroke")
+MS.Thickness = 2
+MS.Parent = Main
+
+local Scale = Instance.new("UIScale")
+Scale.Scale = 0.8
+Scale.Parent = Main
+
+--==================================================
+-- HEADER
+--==================================================
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,60)
+Header.BackgroundColor3 = Color3.fromRGB(24,24,32)
+Header.BorderSizePixel = 0
+Header.ZIndex = 11
+Header.Parent = Main
+
+local HC = Instance.new("UICorner")
+HC.CornerRadius = UDim.new(0,18)
+HC.Parent = Header
+
+local Title = Instance.new("TextLabel")
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.fromOffset(14,5)
+Title.Size = UDim2.new(1,-65,0,28)
+Title.Text = "🌈  شَك بوينت"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 12
+Title.Parent = Header
+
+local Sub = Instance.new("TextLabel")
+Sub.BackgroundTransparency = 1
+Sub.Position = UDim2.fromOffset(15,34)
+Sub.Size = UDim2.new(1,-65,0,17)
+Sub.Text = "نقاط متعددة • أسماء • انتقال • تجسس"
+Sub.TextColor3 = Color3.fromRGB(145,145,160)
+Sub.TextSize = 10
+Sub.Font = Enum.Font.Gotham
+Sub.TextXAlignment = Enum.TextXAlignment.Left
+Sub.ZIndex = 12
+Sub.Parent = Header
+
+--==================================================
+-- CLOSE
+--==================================================
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(38,38)
+Close.Position = UDim2.new(1,-48,0,11)
+Close.BackgroundColor3 = Color3.fromRGB(45,45,55)
+Close.Text = "×"
+Close.TextColor3 = Color3.new(1,1,1)
+Close.TextSize = 25
+Close.Font = Enum.Font.GothamBold
+Close.AutoButtonColor = false
+Close.ZIndex = 20
+Close.Parent = Header
+
+local CC = Instance.new("UICorner")
+CC.CornerRadius = UDim.new(0,10)
+CC.Parent = Close
+
+--==================================================
+-- CONTENT
+--==================================================
+
+local Content = Instance.new("ScrollingFrame")
+Content.Position = UDim2.fromOffset(10,68)
+Content.Size = UDim2.new(1,-20,1,-78)
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 4
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Content.CanvasSize = UDim2.new(0,0,0,0)
+Content.ZIndex = 11
+Content.Parent = Main
+
+local List = Instance.new("UIListLayout")
+List.Padding = UDim.new(0,7)
+List.SortOrder = Enum.SortOrder.LayoutOrder
+List.HorizontalAlignment = Enum.HorizontalAlignment.Center
+List.Parent = Content
+
+--==================================================
+-- STATUS
+--==================================================
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1,-2,0,32)
+Status.BackgroundColor3 = Color3.fromRGB(27,27,36)
+Status.Text = "●  لا توجد شَك بوينتات"
+Status.TextColor3 = Color3.fromRGB(160,160,175)
+Status.TextSize = 11
+Status.Font = Enum.Font.GothamMedium
+Status.ZIndex = 12
+Status.Parent = Content
+
+local SC = Instance.new("UICorner")
+SC.CornerRadius = UDim.new(0,10)
+SC.Parent = Status
+
+--==================================================
+-- BUTTON FUNCTION
+--==================================================
+
+local function MakeButton(text)
+
+	local B = Instance.new("TextButton")
+
+	B.Size = UDim2.new(1,-2,0,44)
+	B.BackgroundColor3 = Color3.fromRGB(30,30,40)
+	B.Text = text
+	B.TextColor3 = Color3.new(1,1,1)
+	B.TextSize = 12
+	B.Font = Enum.Font.GothamBold
+	B.AutoButtonColor = false
+	B.ZIndex = 12
+	B.Parent = Content
+
+	local C = Instance.new("UICorner")
+	C.CornerRadius = UDim.new(0,11)
+	C.Parent = B
+
+	local S = Instance.new("UIStroke")
+	S.Thickness = 1
+	S.Transparency = 0.35
+	S.Parent = B
+
+	return B,S
+end
+
+local NewCP,NewStroke =
+	MakeButton("📍  شَك بوينت جديد")
+
+local GoCP,GoStroke =
+	MakeButton("🚀  انتقال إلى شَك بوينت")
+
+local DeleteCP,DeleteStroke =
+	MakeButton("🗑️  حذف شَك بوينت")
+
+--==================================================
+-- SELECTED CP
+--==================================================
+
+local SelectedText = Instance.new("TextLabel")
+SelectedText.Size = UDim2.new(1,-2,0,27)
+SelectedText.BackgroundTransparency = 1
+SelectedText.Text = "📌 المحدد: لا يوجد"
+SelectedText.TextColor3 = Color3.fromRGB(150,150,165)
+SelectedText.TextSize = 11
+SelectedText.Font = Enum.Font.GothamMedium
+SelectedText.TextXAlignment = Enum.TextXAlignment.Left
+SelectedText.ZIndex = 12
+SelectedText.Parent = Content
+
+--==================================================
+-- CP LIST
+--==================================================
+
+local CPList = Instance.new("ScrollingFrame")
+CPList.Size = UDim2.new(1,-2,0,135)
+CPList.BackgroundColor3 = Color3.fromRGB(21,21,29)
+CPList.BorderSizePixel = 0
+CPList.ScrollBarThickness = 4
+CPList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+CPList.CanvasSize = UDim2.new(0,0,0,0)
+CPList.ZIndex = 12
+CPList.Parent = Content
+
+local CPC = Instance.new("UICorner")
+CPC.CornerRadius = UDim.new(0,12)
+CPC.Parent = CPList
+
+local CPP = Instance.new("UIPadding")
+CPP.PaddingTop = UDim.new(0,6)
+CPP.PaddingBottom = UDim.new(0,6)
+CPP.PaddingLeft = UDim.new(0,6)
+CPP.PaddingRight = UDim.new(0,6)
+CPP.Parent = CPList
+
+local CPL = Instance.new("UIListLayout")
+CPL.Padding = UDim.new(0,5)
+CPL.SortOrder = Enum.SortOrder.LayoutOrder
+CPL.Parent = CPList
+
+--==================================================
+-- PLAYER SECTION
+--==================================================
+
+local PlayerTitle = Instance.new("TextLabel")
+PlayerTitle.Size = UDim2.new(1,-2,0,27)
+PlayerTitle.BackgroundTransparency = 1
+PlayerTitle.Text = "👤  اختيار شخص"
+PlayerTitle.TextColor3 = Color3.new(1,1,1)
+PlayerTitle.TextSize = 13
+PlayerTitle.Font = Enum.Font.GothamBold
+PlayerTitle.TextXAlignment = Enum.TextXAlignment.Left
+PlayerTitle.ZIndex = 12
+PlayerTitle.Parent = Content
+
+local Search = Instance.new("TextBox")
+Search.Size = UDim2.new(1,-2,0,42)
+Search.BackgroundColor3 = Color3.fromRGB(28,28,38)
+Search.PlaceholderText = "🔎  اكتب اسم الشخص..."
+Search.PlaceholderColor3 = Color3.fromRGB(125,125,140)
+Search.Text = ""
+Search.TextColor3 = Color3.new(1,1,1)
+Search.TextSize = 11
+Search.Font = Enum.Font.Gotham
+Search.ClearTextOnFocus = false
+Search.ZIndex = 12
+Search.Parent = Content
+
+local SearchC = Instance.new("UICorner")
+SearchC.CornerRadius = UDim.new(0,11)
+SearchC.Parent = Search
+
+local Preview = Instance.new("Frame")
+Preview.Size = UDim2.new(1,-2,0,72)
+Preview.BackgroundColor3 = Color3.fromRGB(24,24,32)
+Preview.BorderSizePixel = 0
+Preview.Visible = false
+Preview.ZIndex = 12
+Preview.Parent = Content
+
+local PVC = Instance.new("UICorner")
+PVC.CornerRadius = UDim.new(0,12)
+PVC.Parent = Preview
+
+local Avatar = Instance.new("ImageLabel")
+Avatar.Size = UDim2.fromOffset(58,58)
+Avatar.Position = UDim2.fromOffset(7,7)
+Avatar.BackgroundColor3 = Color3.fromRGB(35,35,45)
+Avatar.Image = ""
+Avatar.ZIndex = 13
+Avatar.Parent = Preview
+
+local AVC = Instance.new("UICorner")
+AVC.CornerRadius = UDim.new(0,11)
+AVC.Parent = Avatar
+
+local PName = Instance.new("TextLabel")
+PName.BackgroundTransparency = 1
+PName.Position = UDim2.fromOffset(75,10)
+PName.Size = UDim2.new(1,-82,0,23)
+PName.Text = "لا يوجد شخص"
+PName.TextColor3 = Color3.new(1,1,1)
+PName.TextSize = 12
+PName.Font = Enum.Font.GothamBold
+PName.TextXAlignment = Enum.TextXAlignment.Left
+PName.ZIndex = 13
+PName.Parent = Preview
+
+local PUser = Instance.new("TextLabel")
+PUser.BackgroundTransparency = 1
+PUser.Position = UDim2.fromOffset(75,36)
+PUser.Size = UDim2.new(1,-82,0,18)
+PUser.Text = ""
+PUser.TextColor3 = Color3.fromRGB(145,145,160)
+PUser.TextSize = 10
+PUser.Font = Enum.Font.Gotham
+PUser.TextXAlignment = Enum.TextXAlignment.Left
+PUser.ZIndex = 13
+PUser.Parent = Preview
+
+local SelectedPlayerText = Instance.new("TextLabel")
+SelectedPlayerText.Size = UDim2.new(1,-2,0,23)
+SelectedPlayerText.BackgroundTransparency = 1
+SelectedPlayerText.Text = "المحدد: لا يوجد"
+SelectedPlayerText.TextColor3 = Color3.fromRGB(150,150,165)
+SelectedPlayerText.TextSize = 10
+SelectedPlayerText.Font = Enum.Font.GothamMedium
+SelectedPlayerText.TextXAlignment = Enum.TextXAlignment.Left
+SelectedPlayerText.ZIndex = 12
+SelectedPlayerText.Parent = Content
+
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(1,-2,0,105)
+PlayerList.BackgroundColor3 = Color3.fromRGB(21,21,29)
+PlayerList.BorderSizePixel = 0
+PlayerList.ScrollBarThickness = 4
+PlayerList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+PlayerList.CanvasSize = UDim2.new(0,0,0,0)
+PlayerList.ZIndex = 12
+PlayerList.Parent = Content
+
+local PLC = Instance.new("UICorner")
+PLC.CornerRadius = UDim.new(0,12)
+PLC.Parent = PlayerList
+
+local PLP = Instance.new("UIPadding")
+PLP.PaddingTop = UDim.new(0,5)
+PLP.PaddingBottom = UDim.new(0,5)
+PLP.PaddingLeft = UDim.new(0,5)
+PLP.PaddingRight = UDim.new(0,5)
+PLP.Parent = PlayerList
+
+local PLL = Instance.new("UIListLayout")
+PLL.Padding = UDim.new(0,5)
+PLL.Parent = PlayerList
+
+local GoPlayer,GoPlayerStroke =
+	MakeButton("🚀  انتقال إلى الشخص")
+
+local Spectate,SpectateStroke =
+	MakeButton("👁️  تجسس")
+
+--==================================================
+-- CHECKPOINT LIST
+--==================================================
+
+function RefreshCheckPoints()
+
+	for _,obj in ipairs(CPList:GetChildren()) do
+		if obj:IsA("Frame") and obj.Name:sub(1,3) == "Row" then
+			obj:Destroy()
+		end
+	end
+
+	for index,data in ipairs(CheckPoints) do
+
+		local Row = Instance.new("Frame")
+		Row.Name = "Row_" .. index
+		Row.Size = UDim2.new(1,-2,0,42)
+		Row.BackgroundColor3 =
+			SelectedCheckPoint == index
+			and Color3.fromRGB(42,57,72)
+			or Color3.fromRGB(31,31,41)
+		Row.BorderSizePixel = 0
+		Row.ZIndex = 13
+		Row.Parent = CPList
+
+		local RC = Instance.new("UICorner")
+		RC.CornerRadius = UDim.new(0,10)
+		RC.Parent = Row
+
+		-- زر اختيار النقطة
+		local Select = Instance.new("TextButton")
+		Select.Size = UDim2.new(1,-48,1,0)
+		Select.Position = UDim2.fromOffset(0,0)
+		Select.BackgroundTransparency = 1
+		Select.Text =
+			(SelectedCheckPoint == index and "✅  " or "📍  ")
+			.. data.Name
+		Select.TextColor3 = Color3.new(1,1,1)
+		Select.TextSize = 11
+		Select.Font = Enum.Font.GothamBold
+		Select.TextXAlignment = Enum.TextXAlignment.Left
+		Select.AutoButtonColor = false
+		Select.ZIndex = 14
+		Select.Parent = Row
+
+		local SP = Instance.new("UIPadding")
+		SP.PaddingLeft = UDim.new(0,10)
+		SP.Parent = Select
+
+		Select.Activated:Connect(function()
+
+			SelectedCheckPoint = index
+
+			SelectedText.Text =
+				"📌 المحدد: " ..
+				CheckPoints[index].Name
+
+			SelectedText.TextColor3 =
+				Color3.fromRGB(90,200,255)
+
+			RefreshCheckPoints()
+		end)
+
+		--==================================================
+		-- ✏️ EDIT BUTTON
+		--==================================================
+
+		local Edit = Instance.new("TextButton")
+		Edit.Size = UDim2.fromOffset(38,36)
+		Edit.Position = UDim2.new(1,-42,0,3)
+		Edit.BackgroundColor3 = Color3.fromRGB(52,52,65)
+		Edit.Text = "✏️"
+		Edit.TextSize = 16
+		Edit.Font = Enum.Font.GothamBold
+		Edit.TextColor3 = Color3.new(1,1,1)
+		Edit.AutoButtonColor = false
+		Edit.ZIndex = 15
+		Edit.Parent = Row
+
+		local EC = Instance.new("UICorner")
+		EC.CornerRadius = UDim.new(0,9)
+		EC.Parent = Edit
+
+		Edit.Activated:Connect(function()
+
+			SelectedCheckPoint = index
+
+			local NameGui = Instance.new("Frame")
+			NameGui.Name = "NameEditor"
+			NameGui.Size = UDim2.fromOffset(270,145)
+			NameGui.Position = UDim2.new(0.5,-135,0.5,-72)
+			NameGui.BackgroundColor3 = Color3.fromRGB(18,18,25)
+			NameGui.BorderSizePixel = 0
+			NameGui.ZIndex = 100
+			NameGui.Parent = Gui
+
+			local NGC = Instance.new("UICorner")
+			NGC.CornerRadius = UDim.new(0,15)
+			NGC.Parent = NameGui
+
+			local NGS = Instance.new("UIStroke")
+			NGS.Thickness = 2
+			NGS.Parent = NameGui
+
+			local NT = Instance.new("TextLabel")
+			NT.BackgroundTransparency = 1
+			NT.Size = UDim2.new(1,-20,0,30)
+			NT.Position = UDim2.fromOffset(10,8)
+			NT.Text = "✏️  تسمية شَك بوينت"
+			NT.TextColor3 = Color3.new(1,1,1)
+			NT.TextSize = 14
+			NT.Font = Enum.Font.GothamBold
+			NT.ZIndex = 101
+			NT.Parent = NameGui
+
+			local Box = Instance.new("TextBox")
+			Box.Size = UDim2.new(1,-20,0,42)
+			Box.Position = UDim2.fromOffset(10,45)
+			Box.BackgroundColor3 = Color3.fromRGB(31,31,41)
+			Box.Text = data.Name
+			Box.PlaceholderText = "اكتب اسم شَك بوينت..."
+			Box.PlaceholderColor3 = Color3.fromRGB(120,120,135)
+			Box.TextColor3 = Color3.new(1,1,1)
+			Box.TextSize = 12
+			Box.Font = Enum.Font.Gotham
+			Box.ClearTextOnFocus = false
+			Box.ZIndex = 101
+			Box.Parent = NameGui
+
+			local BC = Instance.new("UICorner")
+			BC.CornerRadius = UDim.new(0,10)
+			BC.Parent = Box
+
+			local Save = Instance.new("TextButton")
+			Save.Size = UDim2.new(1,-20,0,38)
+			Save.Position = UDim2.fromOffset(10,95)
+			Save.BackgroundColor3 = Color3.fromRGB(35,70,55)
+			Save.Text = "✅ حفظ الاسم"
+			Save.TextColor3 = Color3.new(1,1,1)
+			Save.TextSize = 11
+			Save.Font = Enum.Font.GothamBold
+			Save.AutoButtonColor = false
+			Save.ZIndex = 101
+			Save.Parent = NameGui
+
+			local SaveC = Instance.new("UICorner")
+			SaveC.CornerRadius = UDim.new(0,10)
+			SaveC.Parent = Save
+
+			local function SaveName()
+
+				local NewName = Box.Text
+
+				if NewName == "" then
+					NewName = "شَك بوينت " .. index
+				end
+
+				if CheckPoints[index] then
+					CheckPoints[index].Name = NewName
+				end
+
+				SelectedCheckPoint = index
+
+				SelectedText.Text =
+					"📌 المحدد: " ..
+					NewName
+
+				Status.Text =
+					"✏️ تم حفظ اسم الشَك بوينت"
+
+				Status.TextColor3 =
+					Color3.fromRGB(80,255,145)
+
+				NameGui:Destroy()
+
+				RefreshCheckPoints()
+			end
+
+			Save.Activated:Connect(SaveName)
+
+			Box.FocusLost:Connect(function(enterPressed)
+				if enterPressed and NameGui.Parent then
+					SaveName()
+				end
+			end)
+
+			task.defer(function()
+				Box:CaptureFocus()
+			end)
+		end)
+	end
+
+	if #CheckPoints == 0 then
+		Status.Text = "●  لا توجد شَك بوينتات"
+	else
+		Status.Text =
+			"●  عدد الشَك بوينتات: "
+			.. #CheckPoints
+	end
+end--// 🌈 CHECK POINT PRO
+--// PART 2 / 2
+
+--==================================================
+-- CREATE CHECKPOINT
+--==================================================
+
+NewCP.Activated:Connect(function()
+
+	if not RootPart then
+
+		Status.Text = "⚠ الشخصية غير جاهزة"
+		Status.TextColor3 =
+			Color3.fromRGB(255,170,70)
+
+		return
+	end
+
+	local Number = #CheckPoints + 1
+
+	table.insert(CheckPoints,{
+		CFrame = RootPart.CFrame,
+		Name = "شَك بوينت " .. Number
+	})
+
+	SelectedCheckPoint = Number
+
+	SelectedText.Text =
+		"📌 المحدد: شَك بوينت " .. Number
+
+	Status.Text =
+		"📍 تم إنشاء شَك بوينت " .. Number
+
+	Status.TextColor3 =
+		Color3.fromRGB(80,255,145)
+
+	RefreshCheckPoints()
+end)
+
+--==================================================
+-- TELEPORT CHECKPOINT
+--==================================================
+
+GoCP.Activated:Connect(function()
+
+	if not SelectedCheckPoint then
+
+		Status.Text =
+			"⚠ اختر شَك بوينت أولاً"
+
+		Status.TextColor3 =
+			Color3.fromRGB(255,170,70)
+
+		return
+	end
+
+	local Data =
+		CheckPoints[SelectedCheckPoint]
+
+	if not Data or not Data.CFrame then
+		return
+	end
+
+	if not RootPart then
+		return
+	end
+
+	RootPart.AssemblyLinearVelocity =
+		Vector3.zero
+
+	RootPart.AssemblyAngularVelocity =
+		Vector3.zero
+
+	RootPart.CFrame =
+		Data.CFrame * CFrame.new(0,3,0)
+
+	Status.Text =
+		"🚀 انتقال إلى " .. Data.Name
+
+	Status.TextColor3 =
+		Color3.fromRGB(90,200,255)
+end)
+
+--==================================================
+-- DELETE CHECKPOINT
+--==================================================
+
+DeleteCP.Activated:Connect(function()
+
+	if not SelectedCheckPoint then
+
+		Status.Text =
+			"⚠ اختر شَك بوينت أولاً"
+
+		return
+	end
+
+	local OldIndex =
+		SelectedCheckPoint
+
+	local OldName =
+		CheckPoints[OldIndex]
+		and CheckPoints[OldIndex].Name
+		or "شَك بوينت"
+
+	table.remove(
+		CheckPoints,
+		OldIndex
+	)
+
+	if #CheckPoints == 0 then
+
+		SelectedCheckPoint = nil
+
+		SelectedText.Text =
+			"📌 المحدد: لا يوجد"
+
+	else
+
+		SelectedCheckPoint =
+			math.min(
+				OldIndex,
+				#CheckPoints
+			)
+
+		SelectedText.Text =
+			"📌 المحدد: " ..
+			CheckPoints[
+				SelectedCheckPoint
+			].Name
+	end
+
+	Status.Text =
+		"🗑️ تم حذف " .. OldName
+
+	Status.TextColor3 =
+		Color3.fromRGB(255,170,80)
+
+	RefreshCheckPoints()
+end)
+
+--==================================================
+-- FIND PLAYER
+--==================================================
+
+local function FindPlayer(text)
+
+	text = string.lower(text or "")
+	text = string.gsub(text,"%s+","")
+
+	if text == "" then
+		return nil
+	end
+
+	for _,p in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if p ~= LP then
+
+			if string.lower(p.Name) == text
+			or string.lower(p.DisplayName) == text then
+
+				return p
+			end
+		end
+	end
+
+	for _,p in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if p ~= LP then
+
+			if string.find(
+				string.lower(p.Name),
+				text,
+				1,
+				true
+			)
+			or string.find(
+				string.lower(p.DisplayName),
+				text,
+				1,
+				true
+			) then
+
+				return p
+			end
+		end
+	end
+
+	return nil
+end
+
+--==================================================
+-- PLAYER PREVIEW
+--==================================================
+
+local function SelectPlayer(p)
+
+	if not p then
+		return
+	end
+
+	SelectedPlayer = p
+
+	Preview.Visible = true
+
+	PName.Text = p.DisplayName
+	PUser.Text = "@" .. p.Name
+
+	SelectedPlayerText.Text =
+		"المحدد: " .. p.DisplayName
+
+	SelectedPlayerText.TextColor3 =
+		Color3.fromRGB(90,200,255)
+
+	Search.Text = p.Name
+
+	task.spawn(function()
+
+		local success,image =
+			pcall(function()
+
+				return Players:GetUserThumbnailAsync(
+					p.UserId,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size150x150
+				)
+
+			end)
+
+		if success then
+			Avatar.Image = image
+		end
+	end)
+end
+
+--==================================================
+-- REFRESH PLAYER LIST
+--==================================================
+
+local function RefreshPlayers()
+
+	for _,obj in ipairs(
+		PlayerList:GetChildren()
+	) do
+
+		if obj:IsA("TextButton") then
+			obj:Destroy()
+		end
+	end
+
+	for _,p in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if p ~= LP then
+
+			local B =
+				Instance.new("TextButton")
+
+			B.Size =
+				UDim2.new(1,-10,0,40)
+
+			B.BackgroundColor3 =
+				Color3.fromRGB(31,31,41)
+
+			B.Text =
+				"👤  " .. p.DisplayName
+
+			B.TextColor3 =
+				Color3.new(1,1,1)
+
+			B.TextSize = 10
+			B.Font = Enum.Font.GothamMedium
+			B.TextXAlignment =
+				Enum.TextXAlignment.Left
+
+			B.AutoButtonColor = false
+			B.ZIndex = 13
+			B.Parent = PlayerList
+
+			local Padding =
+				Instance.new("UIPadding")
+
+			Padding.PaddingLeft =
+				UDim.new(0,10)
+
+			Padding.Parent = B
+
+			local C =
+				Instance.new("UICorner")
+
+			C.CornerRadius =
+				UDim.new(0,10)
+
+			C.Parent = B
+
+			B.Activated:Connect(function()
+				SelectPlayer(p)
+			end)
+		end
+	end
+end
+
+RefreshPlayers()
+
+Players.PlayerAdded:Connect(function()
+	task.wait(0.1)
+	RefreshPlayers()
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+
+	if SelectedPlayer == p then
+
+		SelectedPlayer = nil
+		Preview.Visible = false
+		Search.Text = ""
+
+		SelectedPlayerText.Text =
+			"المحدد: لا يوجد"
+	end
+
+	RefreshPlayers()
+end)
+
+--==================================================
+-- SEARCH PLAYER
+--==================================================
+
+Search.FocusLost:Connect(function()
+
+	local p =
+		FindPlayer(Search.Text)
+
+	if p then
+
+		SelectPlayer(p)
+
+	else
+
+		SelectedPlayer = nil
+		Preview.Visible = false
+
+		SelectedPlayerText.Text =
+			"⚠ لم يتم العثور على الشخص"
+
+		SelectedPlayerText.TextColor3 =
+			Color3.fromRGB(255,170,70)
+	end
+end)
+
+--==================================================
+-- TELEPORT PLAYER
+--==================================================
+
+GoPlayer.Activated:Connect(function()
+
+	if not SelectedPlayer then
+
+		Status.Text =
+			"⚠ اختر شخصاً أولاً"
+
+		return
+	end
+
+	local char =
+		SelectedPlayer.Character
+
+	local targetRoot =
+		char and char:FindFirstChild(
+			"HumanoidRootPart"
+		)
+
+	if not targetRoot or not RootPart then
+
+		Status.Text =
+			"⚠ اللاعب غير جاهز"
+
+		return
+	end
+
+	RootPart.AssemblyLinearVelocity =
+		Vector3.zero
+
+	RootPart.AssemblyAngularVelocity =
+		Vector3.zero
+
+	RootPart.CFrame =
+		targetRoot.CFrame *
+		CFrame.new(0,3,0)
+
+	Status.Text =
+		"🚀 انتقال إلى " ..
+		SelectedPlayer.DisplayName
+
+	Status.TextColor3 =
+		Color3.fromRGB(90,200,255)
+end)
+
+--==================================================
+-- SPECTATE
+--==================================================
+
+local function StopSpectate()
+
+	Spectating = false
+
+	Spectate.Text =
+		"👁️  تجسس"
+
+	local Camera =
+		workspace.CurrentCamera
+
+	if Camera and Humanoid then
+
+		Camera.CameraType =
+			Enum.CameraType.Custom
+
+		Camera.CameraSubject =
+			Humanoid
+	end
+
+	Status.Text =
+		"👁️ تم إيقاف التجسس"
+end
+
+local function StartSpectate()
+
+	if not SelectedPlayer then
+
+		Status.Text =
+			"⚠ اختر شخصاً أولاً"
+
+		return
+	end
+
+	Spectating = true
+
+	Spectate.Text =
+		"👁️  إيقاف التجسس"
+
+	Status.Text =
+		"👁️ تجسس: " ..
+		SelectedPlayer.DisplayName
+
+	task.spawn(function()
+
+		while Spectating do
+
+			local Camera =
+				workspace.CurrentCamera
+
+			local char =
+				SelectedPlayer.Character
+
+			local hum =
+				char and char:FindFirstChildOfClass(
+					"Humanoid"
+				)
+
+			if Camera and hum then
+
+				Camera.CameraType =
+					Enum.CameraType.Custom
+
+				Camera.CameraSubject =
+					hum
+			end
+
+			task.wait(0.1)
+		end
+	end)
+end
+
+Spectate.Activated:Connect(function()
+
+	if Spectating then
+		StopSpectate()
+	else
+		StartSpectate()
+	end
+end)
+
+--==================================================
+-- DRAG
+--==================================================
+
+local function MakeDraggable(object,handle)
+
+	local dragging = false
+	local startPos
+	local objectPos
+
+	handle.InputBegan:Connect(function(input)
+
+		if input.UserInputType ==
+			Enum.UserInputType.Touch
+		or input.UserInputType ==
+			Enum.UserInputType.MouseButton1 then
+
+			dragging = true
+			startPos = input.Position
+			objectPos = object.Position
+
+			input.Changed:Connect(function()
+
+				if input.UserInputState ==
+					Enum.UserInputState.End then
+
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	handle.InputChanged:Connect(function(input)
+
+		if not dragging then
+			return
+		end
+
+		if input.UserInputType ==
+			Enum.UserInputType.Touch
+		or input.UserInputType ==
+			Enum.UserInputType.MouseMovement then
+
+			local delta =
+				input.Position - startPos
+
+			object.Position =
+				UDim2.new(
+					objectPos.X.Scale,
+					objectPos.X.Offset + delta.X,
+					objectPos.Y.Scale,
+					objectPos.Y.Offset + delta.Y
+				)
+		end
+	end)
+end
+
+MakeDraggable(OpenButton,OpenButton)
+MakeDraggable(Main,Header)
+
+--==================================================
+-- OPEN / CLOSE
+--==================================================
+
+local function OpenMenu()
+
+	MenuOpen = true
+	Main.Visible = true
+	Scale.Scale = 0.8
+
+	RefreshCheckPoints()
+	RefreshPlayers()
+
+	TweenService:Create(
+		Scale,
+		TweenInfo.new(
+			0.25,
+			Enum.EasingStyle.Back,
+			Enum.EasingDirection.Out
+		),
+		{Scale = 1}
+	):Play()
+
+	OpenButton.Text = "×"
+end
+
+local function CloseMenu()
+
+	MenuOpen = false
+
+	TweenService:Create(
+		Scale,
+		TweenInfo.new(0.14),
+		{Scale = 0.8}
+	):Play()
+
+	task.wait(0.12)
+
+	Main.Visible = false
+	OpenButton.Text = "+"
+end
+
+OpenButton.Activated:Connect(function()
+
+	if MenuOpen then
+		CloseMenu()
+	else
+		OpenMenu()
+	end
+end)
+
+Close.Activated:Connect(function()
+
+	if MenuOpen then
+		CloseMenu()
+	end
+end)
+
+--==================================================
+-- RAINBOW
+--==================================================
+
+RunService.RenderStepped:Connect(function(dt)
+
+	RainbowTime += dt * 0.35
+
+	local C1 =
+		Color3.fromHSV(
+			RainbowTime % 1,
+			0.9,
+			1
+		)
+
+	local C2 =
+		Color3.fromHSV(
+			(RainbowTime + 0.35) % 1,
+			0.8,
+			1
+		)
+
+	OS.Color = C1
+	MS.Color = C2
+
+	NewStroke.Color = C1
+	GoStroke.Color = C2
+	DeleteStroke.Color = C1
+
+	GoPlayerStroke.Color = C2
+	SpectateStroke.Color = C1
+
+	OpenButton.BackgroundColor3 =
+		Color3.fromHSV(
+			(RainbowTime + 0.5) % 1,
+			0.65,
+			0.28
+		)
+end)
+
+--==================================================
+-- INITIAL
+--==================================================
+
+RefreshCheckPoints()
+RefreshPlayers()
+
+print("🌈 CHECK POINT PRO جاهز")
