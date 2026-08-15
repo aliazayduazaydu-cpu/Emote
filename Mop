@@ -1,0 +1,1009 @@
+--// 🧟 LEGEND OF ZOMBIES RPG
+--// AUTO FARM + GROUND ORBIT - MOBILE
+--// AUTO FARM STAYS ON AFTER DEATH
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local AutoFarm = false
+local FarmRange = 100
+local HeightAboveZombie = 5
+local AttackDelay = 0.15
+
+local OrbitEnabled = true
+local OrbitSpeed = 25
+local OrbitAngle = 0
+local OrbitRadius = 6
+
+--==================================================
+-- REMOVE OLD GUI
+--==================================================
+
+local OldGui = PlayerGui:FindFirstChild("LegendZombieAutoFarm")
+
+if OldGui then
+	OldGui:Destroy()
+end
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "LegendZombieAutoFarm"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 999
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Parent = PlayerGui
+
+--==================================================
+-- OPEN / CLOSE BUTTON
+--==================================================
+
+local OpenButton = Instance.new("TextButton")
+OpenButton.Name = "OpenClose"
+OpenButton.Size = UDim2.fromOffset(48, 48)
+OpenButton.Position = UDim2.new(0, 20, 0.5, -24)
+OpenButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+OpenButton.BorderSizePixel = 0
+OpenButton.Text = "−"
+OpenButton.TextColor3 = Color3.new(1, 1, 1)
+OpenButton.TextSize = 28
+OpenButton.Font = Enum.Font.GothamBold
+OpenButton.Active = true
+OpenButton.Parent = Gui
+
+local OpenCorner = Instance.new("UICorner")
+OpenCorner.CornerRadius = UDim.new(1, 0)
+OpenCorner.Parent = OpenButton
+
+local OpenStroke = Instance.new("UIStroke")
+OpenStroke.Thickness = 2
+OpenStroke.Transparency = 0.15
+OpenStroke.Parent = OpenButton
+
+--==================================================
+-- MAIN
+--==================================================
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(285, 390)
+Main.Position = UDim2.new(0.5, -142, 0.5, -195)
+Main.BackgroundColor3 = Color3.fromRGB(23, 23, 29)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0.15
+MainStroke.Parent = Main
+
+--==================================================
+-- HEADER
+--==================================================
+
+local Header = Instance.new("TextButton")
+Header.Size = UDim2.new(1, 0, 0, 48)
+Header.BackgroundColor3 = Color3.fromRGB(33, 33, 42)
+Header.BorderSizePixel = 0
+Header.Text = "🧟  ZOMBIE AUTO FARM"
+Header.TextColor3 = Color3.new(1, 1, 1)
+Header.TextSize = 17
+Header.Font = Enum.Font.GothamBold
+Header.AutoButtonColor = false
+Header.Parent = Main
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 14)
+HeaderCorner.Parent = Header
+
+--==================================================
+-- STATUS
+--==================================================
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, -20, 0, 27)
+Status.Position = UDim2.fromOffset(10, 52)
+Status.BackgroundTransparency = 1
+Status.Text = "Status: OFF"
+Status.TextColor3 = Color3.fromRGB(255, 80, 80)
+Status.TextSize = 14
+Status.Font = Enum.Font.GothamBold
+Status.Parent = Main
+
+--==================================================
+-- FARM RANGE
+--==================================================
+
+local RangeLabel = Instance.new("TextLabel")
+RangeLabel.Size = UDim2.fromOffset(125, 30)
+RangeLabel.Position = UDim2.fromOffset(12, 84)
+RangeLabel.BackgroundTransparency = 1
+RangeLabel.Text = "🎯 Farm Range"
+RangeLabel.TextColor3 = Color3.new(1, 1, 1)
+RangeLabel.TextSize = 14
+RangeLabel.Font = Enum.Font.GothamBold
+RangeLabel.TextXAlignment = Enum.TextXAlignment.Left
+RangeLabel.Parent = Main
+
+local RangeBox = Instance.new("TextBox")
+RangeBox.Size = UDim2.fromOffset(125, 34)
+RangeBox.Position = UDim2.fromOffset(145, 81)
+RangeBox.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+RangeBox.BorderSizePixel = 0
+RangeBox.Text = "100"
+RangeBox.PlaceholderText = "1 - 250"
+RangeBox.TextColor3 = Color3.new(1, 1, 1)
+RangeBox.TextSize = 14
+RangeBox.Font = Enum.Font.GothamBold
+RangeBox.ClearTextOnFocus = false
+RangeBox.Parent = Main
+
+local RangeCorner = Instance.new("UICorner")
+RangeCorner.CornerRadius = UDim.new(0, 8)
+RangeCorner.Parent = RangeBox
+
+local ApplyRange = Instance.new("TextButton")
+ApplyRange.Size = UDim2.fromOffset(258, 32)
+ApplyRange.Position = UDim2.fromOffset(13, 120)
+ApplyRange.BackgroundColor3 = Color3.fromRGB(55, 55, 68)
+ApplyRange.BorderSizePixel = 0
+ApplyRange.Text = "APPLY FARM RANGE"
+ApplyRange.TextColor3 = Color3.new(1, 1, 1)
+ApplyRange.TextSize = 13
+ApplyRange.Font = Enum.Font.GothamBold
+ApplyRange.Parent = Main
+
+local ApplyRangeCorner = Instance.new("UICorner")
+ApplyRangeCorner.CornerRadius = UDim.new(0, 8)
+ApplyRangeCorner.Parent = ApplyRange
+
+--==================================================
+-- HEIGHT
+--==================================================
+
+local HeightLabel = Instance.new("TextLabel")
+HeightLabel.Size = UDim2.fromOffset(130, 30)
+HeightLabel.Position = UDim2.fromOffset(12, 161)
+HeightLabel.BackgroundTransparency = 1
+HeightLabel.Text = "📏 Height Above"
+HeightLabel.TextColor3 = Color3.new(1, 1, 1)
+HeightLabel.TextSize = 14
+HeightLabel.Font = Enum.Font.GothamBold
+HeightLabel.TextXAlignment = Enum.TextXAlignment.Left
+HeightLabel.Parent = Main
+
+local HeightBox = Instance.new("TextBox")
+HeightBox.Size = UDim2.fromOffset(125, 34)
+HeightBox.Position = UDim2.fromOffset(145, 158)
+HeightBox.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+HeightBox.BorderSizePixel = 0
+HeightBox.Text = "5"
+HeightBox.PlaceholderText = "1 - 10"
+HeightBox.TextColor3 = Color3.new(1, 1, 1)
+HeightBox.TextSize = 14
+HeightBox.Font = Enum.Font.GothamBold
+HeightBox.ClearTextOnFocus = false
+HeightBox.Parent = Main
+
+local HeightCorner = Instance.new("UICorner")
+HeightCorner.CornerRadius = UDim.new(0, 8)
+HeightCorner.Parent = HeightBox
+
+local ApplyHeight = Instance.new("TextButton")
+ApplyHeight.Size = UDim2.fromOffset(258, 32)
+ApplyHeight.Position = UDim2.fromOffset(13, 197)
+ApplyHeight.BackgroundColor3 = Color3.fromRGB(55, 55, 68)
+ApplyHeight.BorderSizePixel = 0
+ApplyHeight.Text = "APPLY HEIGHT"
+ApplyHeight.TextColor3 = Color3.new(1, 1, 1)
+ApplyHeight.TextSize = 13
+ApplyHeight.Font = Enum.Font.GothamBold
+ApplyHeight.Parent = Main
+
+local HeightApplyCorner = Instance.new("UICorner")
+HeightApplyCorner.CornerRadius = UDim.new(0, 8)
+HeightApplyCorner.Parent = ApplyHeight
+
+--==================================================
+-- ORBIT SPEED
+--==================================================
+
+local OrbitLabel = Instance.new("TextLabel")
+OrbitLabel.Size = UDim2.fromOffset(130, 30)
+OrbitLabel.Position = UDim2.fromOffset(12, 238)
+OrbitLabel.BackgroundTransparency = 1
+OrbitLabel.Text = "🔄 Orbit Speed"
+OrbitLabel.TextColor3 = Color3.new(1, 1, 1)
+OrbitLabel.TextSize = 14
+OrbitLabel.Font = Enum.Font.GothamBold
+OrbitLabel.TextXAlignment = Enum.TextXAlignment.Left
+OrbitLabel.Parent = Main
+
+local OrbitBox = Instance.new("TextBox")
+OrbitBox.Size = UDim2.fromOffset(125, 34)
+OrbitBox.Position = UDim2.fromOffset(145, 235)
+OrbitBox.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+OrbitBox.BorderSizePixel = 0
+OrbitBox.Text = "25"
+OrbitBox.PlaceholderText = "1 - 100"
+OrbitBox.TextColor3 = Color3.new(1, 1, 1)
+OrbitBox.TextSize = 14
+OrbitBox.Font = Enum.Font.GothamBold
+OrbitBox.ClearTextOnFocus = false
+OrbitBox.Parent = Main
+
+local OrbitCorner = Instance.new("UICorner")
+OrbitCorner.CornerRadius = UDim.new(0, 8)
+OrbitCorner.Parent = OrbitBox
+
+local ApplyOrbit = Instance.new("TextButton")
+ApplyOrbit.Size = UDim2.fromOffset(125, 32)
+ApplyOrbit.Position = UDim2.fromOffset(13, 274)
+ApplyOrbit.BackgroundColor3 = Color3.fromRGB(55, 55, 68)
+ApplyOrbit.BorderSizePixel = 0
+ApplyOrbit.Text = "APPLY SPEED"
+ApplyOrbit.TextColor3 = Color3.new(1, 1, 1)
+ApplyOrbit.TextSize = 13
+ApplyOrbit.Font = Enum.Font.GothamBold
+ApplyOrbit.Parent = Main
+
+local ApplyOrbitCorner = Instance.new("UICorner")
+ApplyOrbitCorner.CornerRadius = UDim.new(0, 8)
+ApplyOrbitCorner.Parent = ApplyOrbit
+
+--==================================================
+-- ORBIT TOGGLE
+--==================================================
+
+local OrbitToggle = Instance.new("TextButton")
+OrbitToggle.Size = UDim2.fromOffset(125, 32)
+OrbitToggle.Position = UDim2.fromOffset(146, 274)
+OrbitToggle.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+OrbitToggle.BorderSizePixel = 0
+OrbitToggle.Text = "ORBIT : ON"
+OrbitToggle.TextColor3 = Color3.new(1, 1, 1)
+OrbitToggle.TextSize = 13
+OrbitToggle.Font = Enum.Font.GothamBold
+OrbitToggle.Parent = Main
+
+local OrbitToggleCorner = Instance.new("UICorner")
+OrbitToggleCorner.CornerRadius = UDim.new(0, 8)
+OrbitToggleCorner.Parent = OrbitToggle
+
+--==================================================
+-- AUTO FARM BUTTON
+--==================================================
+
+local Toggle = Instance.new("TextButton")
+Toggle.Name = "AutoFarmButton"
+Toggle.Size = UDim2.fromOffset(258, 55)
+Toggle.Position = UDim2.fromOffset(13, 322)
+Toggle.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+Toggle.BorderSizePixel = 0
+Toggle.Text = "AUTO FARM : OFF"
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.TextSize = 17
+Toggle.Font = Enum.Font.GothamBold
+Toggle.Parent = Main
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 11)
+ToggleCorner.Parent = Toggle
+
+--==================================================
+-- RAINBOW
+--==================================================
+
+task.spawn(function()
+
+	local Hue = 0
+
+	while Gui.Parent do
+
+		Hue = (Hue + 0.006) % 1
+
+		if AutoFarm then
+			Toggle.BackgroundColor3 =
+				Color3.fromHSV(Hue, 0.9, 1)
+		else
+			Toggle.BackgroundColor3 =
+				Color3.fromRGB(255, 0, 0)
+		end
+
+		task.wait()
+
+	end
+
+end)
+
+--==================================================
+-- MOBILE DRAG
+--==================================================
+
+local function MakeDraggable(Object, MoveObject)
+
+	local Dragging = false
+	local DragStart
+	local StartPosition
+
+	Object.InputBegan:Connect(function(Input)
+
+		if Input.UserInputType == Enum.UserInputType.Touch
+			or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+			Dragging = true
+			DragStart = Input.Position
+			StartPosition = MoveObject.Position
+
+		end
+
+	end)
+
+	Object.InputEnded:Connect(function(Input)
+
+		if Input.UserInputType == Enum.UserInputType.Touch
+			or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+			Dragging = false
+
+		end
+
+	end)
+
+	UserInputService.InputChanged:Connect(function(Input)
+
+		if not Dragging then
+			return
+		end
+
+		if Input.UserInputType == Enum.UserInputType.Touch
+			or Input.UserInputType == Enum.UserInputType.MouseMovement then
+
+			local Delta =
+				Input.Position - DragStart
+
+			MoveObject.Position =
+				UDim2.new(
+					StartPosition.X.Scale,
+					StartPosition.X.Offset + Delta.X,
+					StartPosition.Y.Scale,
+					StartPosition.Y.Offset + Delta.Y
+				)
+
+		end
+
+	end)
+
+end
+
+MakeDraggable(Header, Main)
+MakeDraggable(OpenButton, OpenButton)
+
+--==================================================
+-- OPEN / CLOSE
+--==================================================
+
+local MenuOpen = true
+
+OpenButton.Activated:Connect(function()
+
+	MenuOpen = not MenuOpen
+
+	Main.Visible = MenuOpen
+
+	if MenuOpen then
+		OpenButton.Text = "−"
+	else
+		OpenButton.Text = "+"
+	end
+
+end)
+
+--==================================================
+-- APPLY RANGE
+--==================================================
+
+local function SetRange()
+
+	local Value = tonumber(RangeBox.Text)
+
+	if not Value then
+		RangeBox.Text = tostring(FarmRange)
+		return
+	end
+
+	Value = math.floor(Value)
+
+	if Value < 1 then
+		Value = 1
+	elseif Value > 250 then
+		Value = 250
+	end
+
+	FarmRange = Value
+	RangeBox.Text = tostring(Value)
+
+end
+
+ApplyRange.Activated:Connect(SetRange)
+RangeBox.FocusLost:Connect(SetRange)
+
+--==================================================
+-- APPLY HEIGHT
+--==================================================
+
+local function SetHeight()
+
+	local Value = tonumber(HeightBox.Text)
+
+	if not Value then
+		HeightBox.Text = tostring(HeightAboveZombie)
+		return
+	end
+
+	Value = math.floor(Value)
+
+	if Value < 1 then
+		Value = 1
+	elseif Value > 10 then
+		Value = 10
+	end
+
+	HeightAboveZombie = Value
+	HeightBox.Text = tostring(Value)
+
+end
+
+ApplyHeight.Activated:Connect(SetHeight)
+HeightBox.FocusLost:Connect(SetHeight)
+
+--==================================================
+-- APPLY ORBIT SPEED
+--==================================================
+
+local function SetOrbitSpeed()
+
+	local Value = tonumber(OrbitBox.Text)
+
+	if not Value then
+		OrbitBox.Text = tostring(OrbitSpeed)
+		return
+	end
+
+	Value = math.floor(Value)
+
+	if Value < 1 then
+		Value = 1
+	elseif Value > 100 then
+		Value = 100
+	end
+
+	OrbitSpeed = Value
+	OrbitBox.Text = tostring(Value)
+
+end
+
+ApplyOrbit.Activated:Connect(SetOrbitSpeed)
+OrbitBox.FocusLost:Connect(SetOrbitSpeed)--==================================================
+-- ORBIT TOGGLE
+--==================================================
+
+OrbitToggle.Activated:Connect(function()
+
+	OrbitEnabled = not OrbitEnabled
+
+	if OrbitEnabled then
+
+		OrbitToggle.Text = "ORBIT : ON"
+		OrbitToggle.BackgroundColor3 =
+			Color3.fromRGB(0, 200, 100)
+
+	else
+
+		OrbitToggle.Text = "ORBIT : OFF"
+		OrbitToggle.BackgroundColor3 =
+			Color3.fromRGB(200, 60, 60)
+
+	end
+
+end)
+
+--==================================================
+-- RANGE VISUAL
+--==================================================
+
+local RangePart = Instance.new("Part")
+RangePart.Name = "ZombieFarmRange"
+RangePart.Anchored = true
+RangePart.CanCollide = false
+RangePart.CanTouch = false
+RangePart.CanQuery = false
+RangePart.CastShadow = false
+RangePart.Material = Enum.Material.ForceField
+RangePart.Color = Color3.fromRGB(0, 255, 100)
+RangePart.Transparency = 1
+RangePart.Parent = workspace
+
+local RangeBoxVisual = Instance.new("SelectionBox")
+RangeBoxVisual.Adornee = RangePart
+RangeBoxVisual.LineThickness = 0.04
+RangeBoxVisual.Color3 = Color3.fromRGB(0, 255, 100)
+RangeBoxVisual.SurfaceTransparency = 0.82
+RangeBoxVisual.Visible = false
+RangeBoxVisual.Parent = RangePart
+
+RunService.RenderStepped:Connect(function()
+
+	local Character = Player.Character
+
+	local Root =
+		Character and
+		Character:FindFirstChild("HumanoidRootPart")
+
+	if not Root then
+
+		RangePart.Transparency = 1
+		RangeBoxVisual.Visible = false
+
+		return
+	end
+
+	RangePart.Size = Vector3.new(
+		FarmRange * 2,
+		8,
+		FarmRange * 2
+	)
+
+	RangePart.CFrame =
+		CFrame.new(Root.Position)
+
+	if AutoFarm then
+
+		RangePart.Transparency = 0.88
+		RangeBoxVisual.Visible = true
+
+	else
+
+		RangePart.Transparency = 1
+		RangeBoxVisual.Visible = false
+
+	end
+
+end)
+
+--==================================================
+-- ENEMY ROOT
+--==================================================
+
+local function GetEnemyRoot(Model)
+
+	return Model:FindFirstChild("HumanoidRootPart")
+		or Model:FindFirstChild("UpperTorso")
+		or Model:FindFirstChild("Torso")
+		or Model.PrimaryPart
+
+end
+
+--==================================================
+-- ENEMY CHECK
+--==================================================
+
+local function IsEnemy(Model)
+
+	if not Model:IsA("Model") then
+		return false
+	end
+
+	local Humanoid =
+		Model:FindFirstChildOfClass("Humanoid")
+
+	if not Humanoid then
+		return false
+	end
+
+	if Humanoid.Health <= 0 then
+		return false
+	end
+
+	if Players:GetPlayerFromCharacter(Model) then
+		return false
+	end
+
+	return GetEnemyRoot(Model) ~= nil
+
+end
+
+--==================================================
+-- FIND TARGET
+--==================================================
+
+local function FindTarget()
+
+	local Character = Player.Character
+
+	if not Character then
+		return nil
+	end
+
+	local Root =
+		Character:FindFirstChild("HumanoidRootPart")
+
+	if not Root then
+		return nil
+	end
+
+	local Target = nil
+	local ClosestDistance = FarmRange
+
+	for _, Object in ipairs(workspace:GetDescendants()) do
+
+		if IsEnemy(Object) then
+
+			local EnemyRoot =
+				GetEnemyRoot(Object)
+
+			if EnemyRoot then
+
+				local Distance =
+					(Root.Position - EnemyRoot.Position).Magnitude
+
+				if Distance <= ClosestDistance then
+
+					ClosestDistance = Distance
+					Target = Object
+
+				end
+
+			end
+
+		end
+
+	end
+
+	return Target
+
+end
+
+--==================================================
+-- GET WEAPON
+--==================================================
+
+local function GetWeapon()
+
+	local Character = Player.Character
+
+	if not Character then
+		return nil
+	end
+
+	local Tool =
+		Character:FindFirstChildOfClass("Tool")
+
+	if Tool then
+		return Tool
+	end
+
+	local Backpack =
+		Player:FindFirstChild("Backpack")
+
+	if not Backpack then
+		return nil
+	end
+
+	Tool =
+		Backpack:FindFirstChildOfClass("Tool")
+
+	if Tool then
+
+		local Humanoid =
+			Character:FindFirstChildOfClass("Humanoid")
+
+		if Humanoid then
+
+			pcall(function()
+				Humanoid:EquipTool(Tool)
+			end)
+
+		end
+
+		return Tool
+
+	end
+
+	return nil
+
+end
+
+--==================================================
+-- ATTACK + GROUND ORBIT
+--==================================================
+
+local function Attack(Target)
+
+	if not Target then
+		return
+	end
+
+	local Character = Player.Character
+
+	if not Character then
+		return
+	end
+
+	local Root =
+		Character:FindFirstChild("HumanoidRootPart")
+
+	local EnemyRoot =
+		GetEnemyRoot(Target)
+
+	local EnemyHumanoid =
+		Target:FindFirstChildOfClass("Humanoid")
+
+	if not Root
+		or not EnemyRoot
+		or not EnemyHumanoid then
+		return
+	end
+
+	if EnemyHumanoid.Health <= 0 then
+		return
+	end
+
+	if OrbitEnabled then
+
+		OrbitAngle =
+			OrbitAngle +
+			math.rad(OrbitSpeed)
+
+		if OrbitAngle > math.pi * 2 then
+			OrbitAngle =
+				OrbitAngle - math.pi * 2
+		end
+
+		local X =
+			math.cos(OrbitAngle) * OrbitRadius
+
+		local Z =
+			math.sin(OrbitAngle) * OrbitRadius
+
+		local GroundY =
+			EnemyRoot.Position.Y
+
+		local OrbitPosition =
+			Vector3.new(
+				EnemyRoot.Position.X + X,
+				GroundY,
+				EnemyRoot.Position.Z + Z
+			)
+
+		Root.CFrame =
+			CFrame.lookAt(
+				OrbitPosition,
+				Vector3.new(
+					EnemyRoot.Position.X,
+					GroundY,
+					EnemyRoot.Position.Z
+				)
+			)
+
+	else
+
+		local GroundPosition =
+			Vector3.new(
+				EnemyRoot.Position.X + OrbitRadius,
+				EnemyRoot.Position.Y,
+				EnemyRoot.Position.Z
+			)
+
+		Root.CFrame =
+			CFrame.lookAt(
+				GroundPosition,
+				Vector3.new(
+					EnemyRoot.Position.X,
+					EnemyRoot.Position.Y,
+					EnemyRoot.Position.Z
+				)
+			)
+
+	end
+
+	local Weapon = GetWeapon()
+
+	if Weapon then
+
+		pcall(function()
+			Weapon:Activate()
+		end)
+
+	end
+
+end
+
+--==================================================
+-- TOGGLE AUTO FARM
+--==================================================
+
+local function UpdateToggle()
+
+	if AutoFarm then
+
+		Toggle.Text = "AUTO FARM : ON"
+		Status.Text = "Status: ON"
+
+		Status.TextColor3 =
+			Color3.fromRGB(80, 255, 120)
+
+	else
+
+		Toggle.Text = "AUTO FARM : OFF"
+		Status.Text = "Status: OFF"
+
+		Status.TextColor3 =
+			Color3.fromRGB(255, 80, 80)
+
+	end
+
+end
+
+Toggle.Activated:Connect(function()
+
+	-- هذا هو الزر الوحيد الذي يطفئ AutoFarm
+	AutoFarm = not AutoFarm
+	OrbitAngle = 0
+
+	UpdateToggle()
+
+end)
+
+--==================================================
+-- AUTO FARM LOOP
+--==================================================
+
+task.spawn(function()
+
+	while Gui.Parent do
+
+		if AutoFarm then
+
+			local Character = Player.Character
+
+			local Humanoid =
+				Character and
+				Character:FindFirstChildOfClass("Humanoid")
+
+			if not Character
+				or not Humanoid
+				or Humanoid.Health <= 0 then
+
+				Status.Text =
+					"Status: RESPAWNING..."
+
+				-- لا نطفئ AutoFarm هنا
+				task.wait(0.3)
+
+			else
+
+				local Target =
+					FindTarget()
+
+				if Target then
+
+					local TargetHumanoid =
+						Target:FindFirstChildOfClass("Humanoid")
+
+					Status.Text =
+						"Target: " .. Target.Name
+
+					Attack(Target)
+
+					if TargetHumanoid then
+
+						repeat
+
+							if not AutoFarm then
+								break
+							end
+
+							if not TargetHumanoid.Parent then
+								break
+							end
+
+							if TargetHumanoid.Health <= 0 then
+								break
+							end
+
+							Attack(Target)
+
+							task.wait(AttackDelay)
+
+						until not AutoFarm
+
+					end
+
+				else
+
+					Status.Text =
+						"Status: NO ZOMBIE"
+
+					task.wait(0.25)
+
+				end
+
+			end
+
+		else
+
+			Status.Text =
+				"Status: OFF"
+
+			task.wait(0.1)
+
+		end
+
+	end
+
+end)
+
+--==================================================
+-- CHARACTER RESPAWN SUPPORT
+-- AUTO FARM STAYS ON
+--==================================================
+
+Player.CharacterAdded:Connect(function(Character)
+
+	-- مهم: لا يوجد AutoFarm = false هنا
+	OrbitAngle = 0
+
+	Status.Text =
+		"Status: RESPAWNING..."
+
+	task.wait(1)
+
+	if AutoFarm then
+
+		Status.Text =
+			"Status: ON"
+
+		UpdateToggle()
+
+	end
+
+end)
+
+--==================================================
+-- CLEANUP
+--==================================================
+
+Gui.Destroying:Connect(function()
+
+	AutoFarm = false
+
+	if RangePart then
+		RangePart:Destroy()
+	end
+
+end)
+
+--==================================================
+-- INITIAL STATE
+--==================================================
+
+UpdateToggle()
+
+print("🧟 Legend of Zombies Auto Farm + Ground Orbit Loaded")
