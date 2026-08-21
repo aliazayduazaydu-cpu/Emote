@@ -1,0 +1,507 @@
+--// feFlip 2.30
+--// أزرار أعرض + أسهم فقط
+--// ↑ = Front Flip
+--// ↓ = Back Flip
+--// 🔒 = تثبيت الأزرار
+
+wait(5)
+
+local ver = "2.30"
+local scriptname = "feFlip"
+
+--==================================================
+-- SERVICES
+--==================================================
+
+local Players = game:GetService("Players")
+local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
+
+local zeezy = Players.LocalPlayer
+
+local h = 0.0174533
+
+--==================================================
+-- KEYS
+--==================================================
+
+local FrontflipKey = Enum.KeyCode.Z
+local BackflipKey = Enum.KeyCode.X
+local AirjumpKey = Enum.KeyCode.C
+local ExtraFrontflipKey = Enum.KeyCode.F
+
+--==================================================
+-- CHARACTER
+--==================================================
+
+local function getCharacter()
+	return zeezy.Character or zeezy.CharacterAdded:Wait()
+end
+
+local function getHumanoid()
+	local character = getCharacter()
+	return character:FindFirstChildOfClass("Humanoid")
+end
+
+local function getRoot()
+	local character = getCharacter()
+	return character:FindFirstChild("HumanoidRootPart")
+end
+
+--==================================================
+-- FRONT FLIP
+--==================================================
+
+local function zeezyFrontflip(act, inp, obj)
+
+	if inp ~= Enum.UserInputState.Begin then
+		return
+	end
+
+	local humanoid = getHumanoid()
+	local root = getRoot()
+
+	if not humanoid or not root then
+		return
+	end
+
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+
+	task.wait()
+
+	if not humanoid.Parent or not root.Parent then
+		return
+	end
+
+	humanoid.Sit = true
+
+	for i = 1, 360 do
+
+		task.delay(i / 720, function()
+
+			if root.Parent and humanoid.Parent then
+
+				humanoid.Sit = true
+
+				root.CFrame =
+					root.CFrame *
+					CFrame.Angles(-h, 0, 0)
+
+			end
+
+		end)
+
+	end
+
+	task.wait(0.55)
+
+	if humanoid.Parent then
+		humanoid.Sit = false
+	end
+end
+
+--==================================================
+-- BACK FLIP
+--==================================================
+
+local function zeezyBackflip(act, inp, obj)
+
+	if inp ~= Enum.UserInputState.Begin then
+		return
+	end
+
+	local humanoid = getHumanoid()
+	local root = getRoot()
+
+	if not humanoid or not root then
+		return
+	end
+
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+
+	task.wait()
+
+	if not humanoid.Parent or not root.Parent then
+		return
+	end
+
+	humanoid.Sit = true
+
+	for i = 1, 360 do
+
+		task.delay(i / 720, function()
+
+			if root.Parent and humanoid.Parent then
+
+				humanoid.Sit = true
+
+				root.CFrame =
+					root.CFrame *
+					CFrame.Angles(h, 0, 0)
+
+			end
+
+		end)
+
+	end
+
+	task.wait(0.55)
+
+	if humanoid.Parent then
+		humanoid.Sit = false
+	end
+end
+
+--==================================================
+-- AIR JUMP
+--==================================================
+
+local function zeezyAirjump(act, inp, obj)
+
+	if inp ~= Enum.UserInputState.Begin then
+		return
+	end
+
+	local humanoid = getHumanoid()
+
+	if not humanoid then
+		return
+	end
+
+	humanoid:ChangeState(Enum.HumanoidStateType.Seated)
+
+	task.wait()
+
+	if humanoid.Parent then
+		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end
+
+--==================================================
+-- KEYBOARD BINDS
+--==================================================
+
+ContextActionService:BindAction(
+	"zeezyFrontflip",
+	zeezyFrontflip,
+	false,
+	FrontflipKey
+)
+
+ContextActionService:BindAction(
+	"zeezyBackflip",
+	zeezyBackflip,
+	false,
+	BackflipKey
+)
+
+ContextActionService:BindAction(
+	"zeezyAirjump",
+	zeezyAirjump,
+	false,
+	AirjumpKey
+)
+
+ContextActionService:BindAction(
+	"zeezyExtraFrontflip",
+	zeezyFrontflip,
+	false,
+	ExtraFrontflipKey
+)
+
+--==================================================
+-- GUI
+--==================================================
+
+local PlayerGui = zeezy:WaitForChild("PlayerGui")
+
+local oldGui = PlayerGui:FindFirstChild("feFlipMobile")
+
+if oldGui then
+	oldGui:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+
+ScreenGui.Name = "feFlipMobile"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = PlayerGui
+
+--==================================================
+-- LOCK
+--==================================================
+
+local buttonsLocked = false
+
+--==================================================
+-- DRAG
+--==================================================
+
+local function makeDraggable(object)
+
+	local dragging = false
+	local dragStart
+	local startPos
+	local dragInput
+
+	object.InputBegan:Connect(function(input)
+
+		if buttonsLocked then
+			return
+		end
+
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+
+			dragging = true
+			dragStart = input.Position
+			startPos = object.Position
+
+			input.Changed:Connect(function()
+
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+
+			end)
+
+		end
+
+	end)
+
+	object.InputChanged:Connect(function(input)
+
+		if input.UserInputType == Enum.UserInputType.MouseMovement
+			or input.UserInputType == Enum.UserInputType.Touch then
+
+			dragInput = input
+
+		end
+
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+
+		if input == dragInput
+			and dragging
+			and not buttonsLocked then
+
+			local delta = input.Position - dragStart
+
+			object.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+
+		end
+
+	end)
+
+end
+
+--==================================================
+-- BUTTON CREATOR
+--==================================================
+
+local function createFlipButton(name, text, position)
+
+	local button = Instance.new("TextButton")
+
+	button.Name = name
+
+	-- أعرض من النسخة السابقة
+	button.Size = UDim2.new(0, 62, 0, 50)
+
+	button.Position = position
+
+	button.BackgroundColor3 =
+		Color3.fromRGB(35, 35, 42)
+
+	button.BackgroundTransparency = 0.05
+
+	-- سهم فقط
+	button.Text = text
+
+	button.TextColor3 =
+		Color3.fromRGB(255, 255, 255)
+
+	button.TextScaled = true
+
+	button.Font =
+		Enum.Font.GothamBold
+
+	button.AutoButtonColor = false
+
+	button.Parent = ScreenGui
+
+	local corner = Instance.new("UICorner")
+
+	corner.CornerRadius =
+		UDim.new(0, 9)
+
+	corner.Parent = button
+
+	local stroke = Instance.new("UIStroke")
+
+	stroke.Thickness = 2
+
+	stroke.Color =
+		Color3.fromRGB(255, 255, 255)
+
+	stroke.Transparency = 0.25
+
+	stroke.Parent = button
+
+	makeDraggable(button)
+
+	return button
+end
+
+--==================================================
+-- UP BUTTON
+--==================================================
+
+local UpButton = createFlipButton(
+	"UpButton",
+	"↑",
+	UDim2.new(0, 80, 0, 450)
+)
+
+UpButton.Activated:Connect(function()
+
+	zeezyFrontflip(
+		nil,
+		Enum.UserInputState.Begin,
+		nil
+	)
+
+end)
+
+--==================================================
+-- DOWN BUTTON
+--==================================================
+
+local DownButton = createFlipButton(
+	"DownButton",
+	"↓",
+	UDim2.new(0, 150, 0, 450)
+)
+
+DownButton.Activated:Connect(function()
+
+	zeezyBackflip(
+		nil,
+		Enum.UserInputState.Begin,
+		nil
+	)
+
+end)
+
+--==================================================
+-- LOCK BUTTON
+--==================================================
+
+local LockButton = Instance.new("TextButton")
+
+LockButton.Name = "LockButton"
+
+LockButton.Size =
+	UDim2.new(0, 95, 0, 32)
+
+LockButton.Position =
+	UDim2.new(0, 80, 0, 510)
+
+LockButton.BackgroundColor3 =
+	Color3.fromRGB(45, 150, 75)
+
+LockButton.Text =
+	"🔓 تحريك"
+
+LockButton.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+LockButton.TextScaled = true
+
+LockButton.Font =
+	Enum.Font.GothamBold
+
+LockButton.AutoButtonColor = false
+
+LockButton.Parent = ScreenGui
+
+local LockCorner = Instance.new("UICorner")
+
+LockCorner.CornerRadius =
+	UDim.new(0, 8)
+
+LockCorner.Parent = LockButton
+
+local LockStroke = Instance.new("UIStroke")
+
+LockStroke.Thickness = 2
+
+LockStroke.Color =
+	Color3.fromRGB(255, 255, 255)
+
+LockStroke.Transparency = 0.3
+
+LockStroke.Parent = LockButton
+
+--==================================================
+-- LOCK / UNLOCK
+--==================================================
+
+LockButton.Activated:Connect(function()
+
+	buttonsLocked = not buttonsLocked
+
+	if buttonsLocked then
+
+		LockButton.Text =
+			"🔒 مثبت"
+
+		LockButton.BackgroundColor3 =
+			Color3.fromRGB(180, 55, 55)
+
+	else
+
+		LockButton.Text =
+			"🔓 تحريك"
+
+		LockButton.BackgroundColor3 =
+			Color3.fromRGB(45, 150, 75)
+
+	end
+
+end)
+
+--==================================================
+-- LOAD MESSAGE
+--==================================================
+
+print(
+	scriptname ..
+	" " ..
+	ver ..
+	" loaded successfully"
+)
+
+print("made by Zeezy#7203")
+
+pcall(function()
+
+	game.StarterGui:SetCore(
+		"SendNotification",
+		{
+			Title = "feFlip",
+			Text = "feFlip loaded successfully!",
+			Icon = "rbxassetid://505845268",
+			Duration = 5,
+			Button1 = "Okay"
+		}
+	)
+
+end)
