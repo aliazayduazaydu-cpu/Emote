@@ -1,0 +1,2244 @@
+--// RICK PORTAL SYSTEM
+--// PART 1 / 3
+--// LocalScript - StarterPlayerScripts
+--// Mobile Friendly
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+
+--------------------------------------------------
+-- COLORS
+--------------------------------------------------
+
+local GREEN = Color3.fromRGB(35,255,80)
+local WHITE = Color3.fromRGB(245,245,245)
+local BLACK = Color3.fromRGB(7,9,9)
+local GREY = Color3.fromRGB(120,125,122)
+local DARK = Color3.fromRGB(18,21,20)
+
+local RED = Color3.fromRGB(230,55,55)
+local BLUE = Color3.fromRGB(45,130,255)
+local YELLOW = Color3.fromRGB(255,210,40)
+
+--------------------------------------------------
+-- SETTINGS
+--------------------------------------------------
+
+local PortalLifetime = 15
+local TeleportCooldown = 1
+
+local PortalA = nil
+local PortalB = nil
+local ReturnPortal = nil
+
+local SelectedPlayer = nil
+local SelectedCheckpoint = nil
+
+local Checkpoints = {}
+
+local Placing = false
+local PlacementMode = nil
+local Locked = false
+
+local Dragging = false
+local DragStart
+local StartPos
+
+--------------------------------------------------
+-- GUI
+--------------------------------------------------
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "RickPortalSystem"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = PG
+
+--------------------------------------------------
+-- OPEN BUTTON
+--------------------------------------------------
+
+local Toggle = Instance.new("TextButton")
+Toggle.Name = "OpenButton"
+Toggle.Size = UDim2.fromOffset(52,52)
+Toggle.Position = UDim2.new(0,12,0.5,-26)
+Toggle.BackgroundColor3 = BLACK
+Toggle.Text = "🌀"
+Toggle.TextColor3 = WHITE
+Toggle.TextSize = 25
+Toggle.Font = Enum.Font.GothamBold
+Toggle.AutoButtonColor = true
+Toggle.Parent = Gui
+
+Instance.new("UICorner",Toggle).CornerRadius = UDim.new(1,0)
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Thickness = 2
+ToggleStroke.Parent = Toggle
+
+--------------------------------------------------
+-- MAIN
+--------------------------------------------------
+
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(310,450)
+Main.Position = UDim2.new(.5,-155,.5,-225)
+Main.BackgroundColor3 = DARK
+Main.BorderSizePixel = 0
+Main.Visible = false
+Main.Parent = Gui
+
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,15)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Thickness = 2
+Stroke.Parent = Main
+
+--------------------------------------------------
+-- HEADER
+--------------------------------------------------
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,58)
+Header.BackgroundColor3 = Color3.fromRGB(27,31,29)
+Header.BorderSizePixel = 0
+Header.Parent = Main
+
+Instance.new("UICorner",Header).CornerRadius = UDim.new(0,15)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-55,0,30)
+Title.Position = UDim2.fromOffset(12,5)
+Title.BackgroundTransparency = 1
+Title.Text = "🌀 RICK PORTAL"
+Title.TextColor3 = GREEN
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1,-55,0,18)
+Status.Position = UDim2.fromOffset(12,34)
+Status.BackgroundTransparency = 1
+Status.Text = "جاهز"
+Status.TextColor3 = Color3.fromRGB(175,180,175)
+Status.TextSize = 10
+Status.Font = Enum.Font.Gotham
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.TextTruncate = Enum.TextTruncate.AtEnd
+Status.Parent = Header
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(34,34)
+Close.Position = UDim2.new(1,-43,0,11)
+Close.BackgroundColor3 = Color3.fromRGB(145,45,45)
+Close.Text = "×"
+Close.TextColor3 = WHITE
+Close.TextSize = 23
+Close.Font = Enum.Font.GothamBold
+Close.Parent = Header
+
+Instance.new("UICorner",Close).CornerRadius = UDim.new(0,8)
+
+--------------------------------------------------
+-- TABS
+--------------------------------------------------
+
+local Tabs = Instance.new("Frame")
+Tabs.Size = UDim2.new(1,-20,0,38)
+Tabs.Position = UDim2.fromOffset(10,68)
+Tabs.BackgroundTransparency = 1
+Tabs.Parent = Main
+
+local function TabButton(text,x)
+	local B = Instance.new("TextButton")
+	B.Size = UDim2.new(.333,-4,1,0)
+	B.Position = UDim2.new(x,0,0,0)
+	B.BackgroundColor3 = Color3.fromRGB(35,40,38)
+	B.Text = text
+	B.TextColor3 = WHITE
+	B.TextSize = 11
+	B.Font = Enum.Font.GothamBold
+	B.Parent = Tabs
+
+	Instance.new("UICorner",B).CornerRadius = UDim.new(0,8)
+
+	return B
+end
+
+local PortalTab = TabButton("🌀 بوابات",0)
+local PlayerTab = TabButton("👥 لاعبين",.335)
+local CP_Tab = TabButton("📍 شكبوينت",.67)
+
+--------------------------------------------------
+-- PAGES
+--------------------------------------------------
+
+local function NewPage()
+	local P = Instance.new("Frame")
+	P.Size = UDim2.new(1,-20,1,-120)
+	P.Position = UDim2.fromOffset(10,115)
+	P.BackgroundTransparency = 1
+	P.Parent = Main
+	return P
+end
+
+local PortalPage = NewPage()
+local PlayerPage = NewPage()
+local CPPage = NewPage()
+
+PlayerPage.Visible = false
+CPPage.Visible = false
+
+--------------------------------------------------
+-- BUTTON
+--------------------------------------------------
+
+local function MakeButton(parent,text,y,color)
+	local B = Instance.new("TextButton")
+
+	B.Size = UDim2.new(1,0,0,43)
+	B.Position = UDim2.fromOffset(0,y)
+
+	B.BackgroundColor3 = color
+	B.Text = text
+	B.TextColor3 = WHITE
+	B.TextSize = 11
+	B.Font = Enum.Font.GothamBold
+
+	B.AutoButtonColor = true
+	B.Parent = parent
+
+	Instance.new("UICorner",B).CornerRadius = UDim.new(0,9)
+
+	return B
+end
+
+--------------------------------------------------
+-- PORTAL PAGE
+--------------------------------------------------
+
+local Info = Instance.new("TextLabel")
+Info.Size = UDim2.new(1,0,0,58)
+Info.BackgroundColor3 = Color3.fromRGB(25,30,28)
+Info.Text =
+	"🌀 ضع البوابة الأولى ثم الثانية\nالدخول في أي بوابة ينقلك للبوابة المقابلة"
+Info.TextColor3 = WHITE
+Info.TextSize = 11
+Info.Font = Enum.Font.Gotham
+Info.TextWrapped = true
+Info.Parent = PortalPage
+
+Instance.new("UICorner",Info).CornerRadius = UDim.new(0,9)
+
+local PlacePair = MakeButton(
+	PortalPage,
+	"🌀 وضع بوابتين",
+	68,
+	Color3.fromRGB(35,120,70)
+)
+
+local RemovePortals = MakeButton(
+	PortalPage,
+	"🗑 حذف البوابات",
+	118,
+	Color3.fromRGB(105,45,45)
+)
+
+local GunButton = MakeButton(
+	PortalPage,
+	"🔫 إعطاء Portal Gun",
+	168,
+	Color3.fromRGB(55,75,85)
+)
+
+--------------------------------------------------
+-- DRAG
+--------------------------------------------------
+
+Header.InputBegan:Connect(function(Input)
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+	or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+
+		Dragging = true
+		DragStart = Input.Position
+		StartPos = Main.Position
+
+		Input.Changed:Connect(function()
+
+			if Input.UserInputState == Enum.UserInputState.End then
+				Dragging = false
+			end
+
+		end)
+	end
+end)
+
+UIS.InputChanged:Connect(function(Input)
+
+	if not Dragging then
+		return
+	end
+
+	if Input.UserInputType == Enum.UserInputType.Touch
+	or Input.UserInputType == Enum.UserInputType.MouseMovement then
+
+		local Delta = Input.Position - DragStart
+
+		Main.Position = UDim2.new(
+			StartPos.X.Scale,
+			StartPos.X.Offset + Delta.X,
+			StartPos.Y.Scale,
+			StartPos.Y.Offset + Delta.Y
+		)
+	end
+end)
+
+--------------------------------------------------
+-- PAGE SWITCH
+--------------------------------------------------
+
+local function ShowPage(Page)
+
+	PortalPage.Visible = Page == PortalPage
+	PlayerPage.Visible = Page == PlayerPage
+	CPPage.Visible = Page == CPPage
+
+	PortalTab.BackgroundColor3 =
+		Page == PortalPage
+		and Color3.fromRGB(40,100,65)
+		or Color3.fromRGB(35,40,38)
+
+	PlayerTab.BackgroundColor3 =
+		Page == PlayerPage
+		and Color3.fromRGB(40,100,65)
+		or Color3.fromRGB(35,40,38)
+
+	CP_Tab.BackgroundColor3 =
+		Page == CPPage
+		and Color3.fromRGB(40,100,65)
+		or Color3.fromRGB(35,40,38)
+end
+
+PortalTab.Activated:Connect(function()
+	ShowPage(PortalPage)
+end)
+
+PlayerTab.Activated:Connect(function()
+	ShowPage(PlayerPage)
+end)
+
+CP_Tab.Activated:Connect(function()
+	ShowPage(CPPage)
+end)
+
+Toggle.Activated:Connect(function()
+	Main.Visible = not Main.Visible
+end)
+
+Close.Activated:Connect(function()
+	Main.Visible = false
+end)
+
+--------------------------------------------------
+-- PORTAL FUNCTION
+--------------------------------------------------
+
+local function MakePortal(CF,Name)
+
+	local Model = Instance.new("Model")
+	Model.Name = Name
+	Model.Parent = workspace
+
+	local Touch = Instance.new("Part")
+	Touch.Name = "TeleportArea"
+	Touch.Size = Vector3.new(1.1,6.5,4.5)
+	Touch.CFrame = CF
+	Touch.Transparency = 1
+	Touch.Anchored = true
+	Touch.CanCollide = false
+	Touch.CanTouch = true
+	Touch.CanQuery = false
+	Touch.Parent = Model
+
+	--------------------------------------------------
+	-- FRONT / BACK VISUAL
+	--------------------------------------------------
+
+	local function PortalSide(Offset)
+
+		local Side = Instance.new("Model")
+		Side.Name = "PortalVisual"
+		Side.Parent = Model
+
+		local Outer = Instance.new("Part")
+		Outer.Shape = Enum.PartType.Cylinder
+		Outer.Size = Vector3.new(.22,7.7,5.45)
+		Outer.CFrame =
+			CF
+			* CFrame.new(Offset,0,0)
+			* CFrame.Angles(0,math.rad(90),0)
+
+		Outer.Material = Enum.Material.Neon
+		Outer.Color = WHITE
+		Outer.Anchored = true
+		Outer.CanCollide = false
+		Outer.CanTouch = false
+		Outer.Parent = Side
+
+		local Ring = Instance.new("Part")
+		Ring.Shape = Enum.PartType.Cylinder
+		Ring.Size = Vector3.new(.25,7.35,5.1)
+		Ring.CFrame =
+			CF
+			* CFrame.new(Offset + (Offset > 0 and .03 or -.03),0,0)
+			* CFrame.Angles(0,math.rad(90),0)
+
+		Ring.Material = Enum.Material.SmoothPlastic
+		Ring.Color = BLACK
+		Ring.Anchored = true
+		Ring.CanCollide = false
+		Ring.Parent = Side
+
+		local Energy = Instance.new("Part")
+		Energy.Shape = Enum.PartType.Cylinder
+		Energy.Size = Vector3.new(.3,6.95,4.75)
+		Energy.CFrame =
+			CF
+			* CFrame.new(Offset + (Offset > 0 and .06 or -.06),0,0)
+			* CFrame.Angles(0,math.rad(90),0)
+
+		Energy.Material = Enum.Material.Neon
+		Energy.Color = GREEN
+		Energy.Transparency = .08
+		Energy.Anchored = true
+		Energy.CanCollide = false
+		Energy.CanTouch = false
+		Energy.Parent = Side
+
+		local Core = Instance.new("Part")
+		Core.Shape = Enum.PartType.Cylinder
+		Core.Size = Vector3.new(.34,6.5,4.35)
+		Core.CFrame =
+			CF
+			* CFrame.new(Offset + (Offset > 0 and .09 or -.09),0,0)
+			* CFrame.Angles(0,math.rad(90),0)
+
+		Core.Material = Enum.Material.Neon
+		Core.Color = Color3.fromRGB(0,20,5)
+		Core.Transparency = .15
+		Core.Anchored = true
+		Core.CanCollide = false
+		Core.CanTouch = false
+		Core.Parent = Side
+
+		return Side,Core
+	end
+
+	local Front,FrontCore = PortalSide(.08)
+	local Back,BackCore = PortalSide(-.08)
+
+	--------------------------------------------------
+	-- SWIRL
+	--------------------------------------------------
+
+	local Swirl = Instance.new("Folder")
+	Swirl.Name = "Swirl"
+	Swirl.Parent = Model
+
+	local Points = {}
+	local Count = 130
+
+	for i = 1,Count do
+
+		local P = Instance.new("Part")
+		P.Shape = Enum.PartType.Ball
+		P.Size = Vector3.new(.075,.075,.075)
+		P.Material = Enum.Material.Neon
+		P.Color = GREEN
+
+		P.Anchored = true
+		P.CanCollide = false
+		P.CanTouch = false
+		P.CanQuery = false
+
+		P.Parent = Swirl
+		Points[i] = P
+	end
+
+	local Running = true
+
+	task.spawn(function()
+
+		local Rotation = 0
+
+		while Running and Model.Parent do
+
+			Rotation += .065
+
+			for i,P in ipairs(Points) do
+
+				local T = (i-1)/(Count-1)
+
+				local Angle =
+					T * math.pi * 22
+					+ Rotation
+
+				local Radius =
+					.08 + T * 2.05
+
+				local Y =
+					math.sin(Angle)
+					* Radius
+					* .72
+
+				local Z =
+					math.cos(Angle)
+					* Radius
+
+				P.CFrame =
+					CF
+					* CFrame.Angles(0,math.rad(90),0)
+					* CFrame.new(-.28,Y,-Z)
+			end
+
+			RunService.RenderStepped:Wait()
+		end
+	end)
+
+	--------------------------------------------------
+	-- LIGHT
+	--------------------------------------------------
+
+	for _,Core in ipairs({FrontCore,BackCore}) do
+
+		local Light = Instance.new("PointLight")
+		Light.Color = GREEN
+		Light.Brightness = 2.5
+		Light.Range = 16
+		Light.Parent = Core
+
+	end
+
+	Model.Destroying:Connect(function()
+		Running = false
+	end)
+
+	return Model,Touch
+end
+
+--------------------------------------------------
+-- POSITION
+--------------------------------------------------
+
+local function GetPosition(Input)
+
+	local Character = LP.Character
+	if not Character then return end
+
+	local Camera = workspace.CurrentCamera
+	if not Camera then return end
+
+	local Ray = Camera:ViewportPointToRay(
+		Input.Position.X,
+		Input.Position.Y
+	)
+
+	local Params = RaycastParams.new()
+
+	Params.FilterType =
+		Enum.RaycastFilterType.Exclude
+
+	Params.FilterDescendantsInstances =
+		{Character}
+
+	local Result =
+		workspace:Raycast(
+			Ray.Origin,
+			Ray.Direction * 1000,
+			Params
+		)
+
+	if not Result then
+		return
+	end
+
+	local Hit = Result.Position
+	local Normal = Result.Normal
+
+	if math.abs(Normal.Y) > .7 then
+
+		Hit += Vector3.new(0,3.3,0)
+
+		local Look =
+			Camera.CFrame.LookVector
+
+		local Dir =
+			Vector3.new(
+				Look.X,
+				0,
+				Look.Z
+			)
+
+		if Dir.Magnitude < .01 then
+			Dir = Vector3.new(0,0,-1)
+		end
+
+		return CFrame.lookAt(
+			Hit,
+			Hit + Dir.Unit,
+			Vector3.yAxis
+		)
+	end
+
+	Hit += Normal * .15
+
+	local Dir =
+		-Vector3.new(
+			Normal.X,
+			0,
+			Normal.Z
+		)
+
+	if Dir.Magnitude < .01 then
+		Dir = Vector3.new(0,0,-1)
+	end
+
+	return CFrame.lookAt(
+		Hit,
+		Hit + Dir.Unit,
+		Vector3.yAxis
+	)
+end--// RICK PORTAL SYSTEM
+--// PART 2 / 3
+--// تابع PART 1 مباشرة
+
+--------------------------------------------------
+-- TELEPORT
+--------------------------------------------------
+
+local function ConnectPortal(Touch,TargetCF)
+
+	if not Touch then return end
+
+	Touch.Touched:Connect(function(Hit)
+
+		if Locked then return end
+		if not TargetCF then return end
+
+		local Character = LP.Character
+		if not Character then return end
+
+		if not Hit:IsDescendantOf(Character) then
+			return
+		end
+
+		local Root =
+			Character:FindFirstChild("HumanoidRootPart")
+
+		if not Root then return end
+
+		Locked = true
+
+		--------------------------------------------------
+		-- خروج من البوابة الثانية إلى الخلف قليلاً
+		--------------------------------------------------
+
+		local ExitCF =
+			TargetCF
+			* CFrame.new(0,0,-3.5)
+
+		Root.CFrame = ExitCF
+
+		Root.AssemblyLinearVelocity =
+			Vector3.zero
+
+		Root.AssemblyAngularVelocity =
+			Vector3.zero
+
+		task.delay(
+			TeleportCooldown,
+			function()
+				Locked = false
+			end
+		)
+	end)
+end
+
+--------------------------------------------------
+-- REMOVE PORTALS
+--------------------------------------------------
+
+local function RemovePortals()
+
+	if PortalA then
+		PortalA:Destroy()
+		PortalA = nil
+	end
+
+	if PortalB then
+		PortalB:Destroy()
+		PortalB = nil
+	end
+
+	if ReturnPortal then
+		ReturnPortal:Destroy()
+		ReturnPortal = nil
+	end
+
+	Placing = false
+	PlacementMode = nil
+end
+
+--------------------------------------------------
+-- TWO PORTALS
+--------------------------------------------------
+
+PlacePair.Activated:Connect(function()
+
+	if Placing then return end
+
+	Placing = true
+	PlacementMode = "A"
+
+	Status.Text =
+		"🌀 اضغط مكان البوابة الأولى"
+
+	local Connection
+
+	Connection =
+		UIS.InputBegan:Connect(function(
+			Input,
+			Processed
+		)
+
+		if Processed then
+			return
+		end
+
+		if Input.UserInputType
+			~= Enum.UserInputType.Touch
+			and Input.UserInputType
+			~= Enum.UserInputType.MouseButton1 then
+
+			return
+		end
+
+		local CF =
+			GetPosition(Input)
+
+		if not CF then
+			Status.Text =
+				"❌ لم يتم العثور على مكان"
+			return
+		end
+
+		--------------------------------------------------
+		-- PORTAL A
+		--------------------------------------------------
+
+		if PlacementMode == "A" then
+
+			if PortalA then
+				PortalA:Destroy()
+			end
+
+			local Model =
+				MakePortal(
+					CF,
+					"Portal_A"
+				)
+
+			PortalA = Model
+
+			PlacementMode = "B"
+
+			Status.Text =
+				"🌀 تم وضع الأولى — اضغط للثانية"
+
+		--------------------------------------------------
+		-- PORTAL B
+		--------------------------------------------------
+
+		elseif PlacementMode == "B" then
+
+			if PortalB then
+				PortalB:Destroy()
+			end
+
+			local Model =
+				MakePortal(
+					CF,
+					"Portal_B"
+				)
+
+			PortalB = Model
+
+			local TouchA =
+				PortalA:FindFirstChild(
+					"TeleportArea"
+				)
+
+			local TouchB =
+				PortalB:FindFirstChild(
+					"TeleportArea"
+				)
+
+			--------------------------------------------------
+			-- IMPORTANT:
+			-- نحفظ CFrame كل بوابة قبل الربط
+			--------------------------------------------------
+
+			local TargetA = CF
+			local TargetB = PortalA:GetPivot()
+
+			ConnectPortal(
+				TouchA,
+				TargetA
+			)
+
+			ConnectPortal(
+				TouchB,
+				TargetB
+			)
+
+			Placing = false
+			PlacementMode = nil
+
+			Status.Text =
+				"✅ البوابات مرتبطة"
+
+			Connection:Disconnect()
+
+			task.delay(
+				PortalLifetime,
+				function()
+
+					if PortalA
+					and PortalA.Parent then
+
+						PortalA:Destroy()
+						PortalA = nil
+					end
+
+					if PortalB
+					and PortalB.Parent then
+
+						PortalB:Destroy()
+						PortalB = nil
+					end
+
+					Status.Text =
+						"⏱ انتهى وقت البوابات"
+				end
+			)
+		end
+	end)
+end)
+
+--------------------------------------------------
+-- REMOVE BUTTON
+--------------------------------------------------
+
+RemovePortals.Activated:Connect(function()
+
+	RemovePortals()
+
+	Status.Text =
+		"🗑 تم حذف جميع البوابات"
+end)
+
+--------------------------------------------------
+-- PLAYER PAGE
+--------------------------------------------------
+
+local PlayerList =
+	Instance.new("ScrollingFrame")
+
+PlayerList.Size =
+	UDim2.new(1,0,0,245)
+
+PlayerList.BackgroundColor3 =
+	Color3.fromRGB(22,27,25)
+
+PlayerList.BorderSizePixel = 0
+PlayerList.ScrollBarThickness = 4
+
+PlayerList.AutomaticCanvasSize =
+	Enum.AutomaticSize.Y
+
+PlayerList.CanvasSize =
+	UDim2.new(0,0,0,0)
+
+PlayerList.Parent = PlayerPage
+
+Instance.new(
+	"UICorner",
+	PlayerList
+).CornerRadius =
+	UDim.new(0,9)
+
+local PlayerLayout =
+	Instance.new("UIListLayout")
+
+PlayerLayout.Padding =
+	UDim.new(0,5)
+
+PlayerLayout.Parent =
+	PlayerList
+
+--------------------------------------------------
+-- PLAYER INFO
+--------------------------------------------------
+
+local PlayerInfo =
+	Instance.new("TextLabel")
+
+PlayerInfo.Size =
+	UDim2.new(1,0,0,35)
+
+PlayerInfo.Position =
+	UDim2.fromOffset(0,255)
+
+PlayerInfo.BackgroundTransparency = 1
+
+PlayerInfo.Text =
+	"اختر لاعباً"
+
+PlayerInfo.TextColor3 =
+	Color3.fromRGB(180,185,180)
+
+PlayerInfo.TextSize = 11
+PlayerInfo.Font = Enum.Font.Gotham
+
+PlayerInfo.TextXAlignment =
+	Enum.TextXAlignment.Left
+
+PlayerInfo.Parent =
+	PlayerPage
+
+local GoPlayer =
+	MakeButton(
+		PlayerPage,
+		"🌀 ضع بوابة خلف اللاعب",
+		295,
+		Color3.fromRGB(35,120,70)
+	)
+
+--------------------------------------------------
+-- PLAYER LIST
+--------------------------------------------------
+
+local function RefreshPlayers()
+
+	for _,Child in ipairs(
+		PlayerList:GetChildren()
+	) do
+
+		if Child:IsA("Frame") then
+			Child:Destroy()
+		end
+	end
+
+	for _,P in ipairs(
+		Players:GetPlayers()
+	) do
+
+		if P ~= LP then
+
+			local Row =
+				Instance.new("Frame")
+
+			Row.Size =
+				UDim2.new(1,-6,0,55)
+
+			Row.BackgroundColor3 =
+				P == SelectedPlayer
+				and Color3.fromRGB(45,100,60)
+				or Color3.fromRGB(35,40,38)
+
+			Row.Parent =
+				PlayerList
+
+			Instance.new(
+				"UICorner",
+				Row
+			).CornerRadius =
+				UDim.new(0,8)
+
+			--------------------------------------------------
+			-- AVATAR
+			--------------------------------------------------
+
+			local Avatar =
+				Instance.new("ImageLabel")
+
+			Avatar.Size =
+				UDim2.fromOffset(43,43)
+
+			Avatar.Position =
+				UDim2.fromOffset(6,6)
+
+			Avatar.BackgroundTransparency = 1
+
+			Avatar.Parent =
+				Row
+
+			Instance.new(
+				"UICorner",
+				Avatar
+			).CornerRadius =
+				UDim.new(1,0)
+
+			task.spawn(function()
+
+				local OK,Image =
+					pcall(function()
+
+						return Players:GetUserThumbnailAsync(
+							P.UserId,
+							Enum.ThumbnailType.HeadShot,
+							Enum.ThumbnailSize.Size150x150
+						)
+
+					end)
+
+				if OK
+				and Avatar.Parent then
+
+					Avatar.Image =
+						Image
+				end
+			end)
+
+			--------------------------------------------------
+			-- NAME
+			--------------------------------------------------
+
+			local Name =
+				Instance.new("TextLabel")
+
+			Name.Size =
+				UDim2.new(1,-58,1,0)
+
+			Name.Position =
+				UDim2.fromOffset(58,0)
+
+			Name.BackgroundTransparency = 1
+
+			Name.Text =
+				P.DisplayName
+				.."  @"
+				..P.Name
+
+			Name.TextColor3 =
+				WHITE
+
+			Name.TextSize = 11
+			Name.Font = Enum.Font.GothamBold
+
+			Name.TextXAlignment =
+				Enum.TextXAlignment.Left
+
+			Name.TextTruncate =
+				Enum.TextTruncate.AtEnd
+
+			Name.Parent =
+				Row
+
+			--------------------------------------------------
+			-- SELECT
+			--------------------------------------------------
+
+			local SelectButton =
+				Instance.new("TextButton")
+
+			SelectButton.Size =
+				UDim2.new(1,0,1,0)
+
+			SelectButton.BackgroundTransparency = 1
+			SelectButton.Text = ""
+			SelectButton.Parent = Row
+
+			SelectButton.Activated:Connect(function()
+
+				SelectedPlayer = P
+
+				PlayerInfo.Text =
+					"✅ اللاعب: "
+					..P.DisplayName
+
+				RefreshPlayers()
+			end)
+		end
+	end
+end
+
+--------------------------------------------------
+-- PLAYER PORTAL
+--------------------------------------------------
+
+GoPlayer.Activated:Connect(function()
+
+	if not SelectedPlayer then
+
+		Status.Text =
+			"❌ اختر لاعباً أولاً"
+
+		return
+	end
+
+	local Character =
+		SelectedPlayer.Character
+
+	if not Character then
+
+		Status.Text =
+			"❌ اللاعب غير متاح"
+
+		return
+	end
+
+	local TargetRoot =
+		Character:FindFirstChild(
+			"HumanoidRootPart"
+		)
+
+	if not TargetRoot then
+
+		Status.Text =
+			"❌ لم يتم العثور على اللاعب"
+
+		return
+	end
+
+	--------------------------------------------------
+	-- خلف اللاعب بقليل
+	--------------------------------------------------
+
+	local TargetCF =
+		TargetRoot.CFrame
+		* CFrame.new(0,0,5)
+
+	if ReturnPortal then
+		ReturnPortal:Destroy()
+	end
+
+	local Model,Touch =
+		MakePortal(
+			TargetCF,
+			"PlayerPortal"
+		)
+
+	ReturnPortal = Model
+
+	--------------------------------------------------
+	-- بوابة خروج للاعب نفسه
+	-- من مكان اللاعب الحالي
+	--------------------------------------------------
+
+	local MyCharacter =
+		LP.Character
+
+	local MyRoot =
+		MyCharacter
+		and MyCharacter:FindFirstChild(
+			"HumanoidRootPart"
+		)
+
+	if not MyRoot then
+		return
+	end
+
+	local BackCF =
+		MyRoot.CFrame
+
+	ConnectPortal(
+		Touch,
+		BackCF
+	)
+
+	Status.Text =
+		"🌀 البوابة خلف "
+		..SelectedPlayer.DisplayName
+
+	task.delay(
+		PortalLifetime,
+		function()
+
+			if ReturnPortal
+			and ReturnPortal.Parent then
+
+				ReturnPortal:Destroy()
+				ReturnPortal = nil
+			end
+		end
+	)
+end)
+
+--------------------------------------------------
+-- PLAYER EVENTS
+--------------------------------------------------
+
+Players.PlayerAdded:Connect(function()
+
+	task.wait(.5)
+
+	RefreshPlayers()
+end)
+
+Players.PlayerRemoving:Connect(function(P)
+
+	if SelectedPlayer == P then
+
+		SelectedPlayer = nil
+
+		PlayerInfo.Text =
+			"اختر لاعباً"
+	end
+
+	RefreshPlayers()
+end)--// RICK PORTAL SYSTEM
+--// PART 3 / 3
+--// تابع PART 2 مباشرة
+
+--------------------------------------------------
+-- CHECKPOINT PAGE
+--------------------------------------------------
+
+local CPInfo =
+	Instance.new("TextLabel")
+
+CPInfo.Size =
+	UDim2.new(1,0,0,38)
+
+CPInfo.BackgroundColor3 =
+	Color3.fromRGB(25,30,28)
+
+CPInfo.Text =
+	"📍 احفظ مكانك ثم يمكنك تغيير اسمه"
+
+CPInfo.TextColor3 =
+	WHITE
+
+CPInfo.TextSize = 11
+CPInfo.Font = Enum.Font.Gotham
+
+CPInfo.TextWrapped = true
+CPInfo.Parent = CPPage
+
+Instance.new(
+	"UICorner",
+	CPInfo
+).CornerRadius =
+	UDim.new(0,9)
+
+--------------------------------------------------
+-- ADD CHECKPOINT
+--------------------------------------------------
+
+local AddCP =
+	MakeButton(
+		CPPage,
+		"📍 حفظ شكبوينت",
+		45,
+		Color3.fromRGB(35,120,70)
+	)
+
+--------------------------------------------------
+-- CHECKPOINT LIST
+--------------------------------------------------
+
+local CPList =
+	Instance.new("ScrollingFrame")
+
+CPList.Size =
+	UDim2.new(1,0,0,205)
+
+CPList.Position =
+	UDim2.fromOffset(0,95)
+
+CPList.BackgroundColor3 =
+	Color3.fromRGB(22,27,25)
+
+CPList.BorderSizePixel = 0
+
+CPList.ScrollBarThickness = 4
+
+CPList.AutomaticCanvasSize =
+	Enum.AutomaticSize.Y
+
+CPList.CanvasSize =
+	UDim2.new(0,0,0,0)
+
+CPList.Parent =
+	CPPage
+
+Instance.new(
+	"UICorner",
+	CPList
+).CornerRadius =
+	UDim.new(0,9)
+
+local CPLayout =
+	Instance.new("UIListLayout")
+
+CPLayout.Padding =
+	UDim.new(0,5)
+
+CPLayout.Parent =
+	CPList
+
+--------------------------------------------------
+-- CHECKPOINT PORTAL BUTTON
+--------------------------------------------------
+
+local CPPortalButton =
+	MakeButton(
+		CPPage,
+		"🌀 بوابة إلى الشكبوينت",
+		310,
+		Color3.fromRGB(45,85,120)
+	)
+
+--------------------------------------------------
+-- REFRESH CHECKPOINTS
+--------------------------------------------------
+
+local function RefreshCP()
+
+	for _,Child in ipairs(
+		CPList:GetChildren()
+	) do
+
+		if Child:IsA("Frame") then
+			Child:Destroy()
+		end
+	end
+
+	for _,Data in ipairs(
+		Checkpoints
+	) do
+
+		local Row =
+			Instance.new("Frame")
+
+		Row.Size =
+			UDim2.new(1,-6,0,48)
+
+		Row.BackgroundColor3 =
+			Data == SelectedCheckpoint
+			and Color3.fromRGB(45,100,60)
+			or Color3.fromRGB(35,40,38)
+
+		Row.Parent =
+			CPList
+
+		Instance.new(
+			"UICorner",
+			Row
+		).CornerRadius =
+			UDim.new(0,8)
+
+		--------------------------------------------------
+		-- SELECT
+		--------------------------------------------------
+
+		local Select =
+			Instance.new("TextButton")
+
+		Select.Size =
+			UDim2.new(1,-82,1,0)
+
+		Select.BackgroundTransparency = 1
+
+		Select.Text =
+			"📍 "
+			..Data.Name
+
+		Select.TextColor3 =
+			WHITE
+
+		Select.TextSize = 11
+
+		Select.Font =
+			Enum.Font.GothamBold
+
+		Select.TextXAlignment =
+			Enum.TextXAlignment.Left
+
+		Select.Parent =
+			Row
+
+		Select.Activated:Connect(function()
+
+			SelectedCheckpoint =
+				Data
+
+			Status.Text =
+				"📍 "
+				..Data.Name
+
+			RefreshCP()
+		end)
+
+		--------------------------------------------------
+		-- RENAME BUTTON
+		--------------------------------------------------
+
+		local Rename =
+			Instance.new("TextButton")
+
+		Rename.Size =
+			UDim2.fromOffset(34,34)
+
+		Rename.Position =
+			UDim2.new(1,-76,0,7)
+
+		Rename.BackgroundColor3 =
+			Color3.fromRGB(65,70,68)
+
+		Rename.Text =
+			"✏️"
+
+		Rename.TextColor3 =
+			WHITE
+
+		Rename.TextSize = 15
+
+		Rename.Font =
+			Enum.Font.GothamBold
+
+		Rename.Parent =
+			Row
+
+		Instance.new(
+			"UICorner",
+			Rename
+		).CornerRadius =
+			UDim.new(0,7)
+
+		--------------------------------------------------
+		-- DELETE
+		--------------------------------------------------
+
+		local Delete =
+			Instance.new("TextButton")
+
+		Delete.Size =
+			UDim2.fromOffset(34,34)
+
+		Delete.Position =
+			UDim2.new(1,-39,0,7)
+
+		Delete.BackgroundColor3 =
+			Color3.fromRGB(125,45,45)
+
+		Delete.Text =
+			"🗑"
+
+		Delete.TextColor3 =
+			WHITE
+
+		Delete.TextSize = 14
+
+		Delete.Font =
+			Enum.Font.GothamBold
+
+		Delete.Parent =
+			Row
+
+		Instance.new(
+			"UICorner",
+			Delete
+		).CornerRadius =
+			UDim.new(0,7)
+
+		--------------------------------------------------
+		-- RENAME WINDOW
+		--------------------------------------------------
+
+		Rename.Activated:Connect(function()
+
+			local Box =
+				Instance.new("Frame")
+
+			Box.Size =
+				UDim2.fromOffset(270,130)
+
+			Box.Position =
+				UDim2.new(.5,-135,.5,-65)
+
+			Box.BackgroundColor3 =
+				Color3.fromRGB(25,29,28)
+
+			Box.BorderSizePixel = 0
+
+			Box.ZIndex = 50
+
+			Box.Parent =
+				Gui
+
+			Instance.new(
+				"UICorner",
+				Box
+			).CornerRadius =
+				UDim.new(0,12)
+
+			local BoxStroke =
+				Instance.new("UIStroke")
+
+			BoxStroke.Thickness = 2
+			BoxStroke.Color = GREEN
+			BoxStroke.Parent = Box
+
+			local Label =
+				Instance.new("TextLabel")
+
+			Label.Size =
+				UDim2.new(1,-20,0,28)
+
+			Label.Position =
+				UDim2.fromOffset(10,8)
+
+			Label.BackgroundTransparency = 1
+
+			Label.Text =
+				"✏️ تغيير اسم الشكبوينت"
+
+			Label.TextColor3 =
+				WHITE
+
+			Label.TextSize = 13
+
+			Label.Font =
+				Enum.Font.GothamBold
+
+			Label.ZIndex = 51
+			Label.Parent = Box
+
+			local Input =
+				Instance.new("TextBox")
+
+			Input.Size =
+				UDim2.new(1,-20,0,35)
+
+			Input.Position =
+				UDim2.fromOffset(10,42)
+
+			Input.BackgroundColor3 =
+				Color3.fromRGB(12,15,14)
+
+			Input.Text =
+				Data.Name
+
+			Input.PlaceholderText =
+				"اكتب الاسم هنا"
+
+			Input.TextColor3 =
+				WHITE
+
+			Input.PlaceholderColor3 =
+				GREY
+
+			Input.TextSize = 12
+
+			Input.Font =
+				Enum.Font.Gotham
+
+			Input.ClearTextOnFocus = false
+
+			Input.ZIndex = 51
+			Input.Parent = Box
+
+			Instance.new(
+				"UICorner",
+				Input
+			).CornerRadius =
+				UDim.new(0,7)
+
+			local Save =
+				Instance.new("TextButton")
+
+			Save.Size =
+				UDim2.new(.48,-5,0,30)
+
+			Save.Position =
+				UDim2.new(0,10,1,-38)
+
+			Save.BackgroundColor3 =
+				Color3.fromRGB(35,120,70)
+
+			Save.Text =
+				"حفظ"
+
+			Save.TextColor3 =
+				WHITE
+
+			Save.TextSize = 11
+			Save.Font = Enum.Font.GothamBold
+
+			Save.ZIndex = 51
+			Save.Parent = Box
+
+			Instance.new(
+				"UICorner",
+				Save
+			).CornerRadius =
+				UDim.new(0,7)
+
+			local Cancel =
+				Instance.new("TextButton")
+
+			Cancel.Size =
+				UDim2.new(.48,-5,0,30)
+
+			Cancel.Position =
+				UDim2.new(.52,0,1,-38)
+
+			Cancel.BackgroundColor3 =
+				Color3.fromRGB(105,45,45)
+
+			Cancel.Text =
+				"إلغاء"
+
+			Cancel.TextColor3 =
+				WHITE
+
+			Cancel.TextSize = 11
+			Cancel.Font = Enum.Font.GothamBold
+
+			Cancel.ZIndex = 51
+			Cancel.Parent = Box
+
+			Instance.new(
+				"UICorner",
+				Cancel
+			).CornerRadius =
+				UDim.new(0,7)
+
+			Save.Activated:Connect(function()
+
+				local NewName =
+					Input.Text
+
+				if NewName
+				and NewName:match("%S") then
+
+					Data.Name =
+						NewName
+
+					Status.Text =
+						"✏️ تم تغيير الاسم"
+
+					RefreshCP()
+				end
+
+				Box:Destroy()
+			end)
+
+			Cancel.Activated:Connect(function()
+				Box:Destroy()
+			end)
+
+			task.defer(function()
+				Input:CaptureFocus()
+			end)
+		end)
+
+		--------------------------------------------------
+		-- DELETE
+		--------------------------------------------------
+
+		Delete.Activated:Connect(function()
+
+			for Index,Value in ipairs(
+				Checkpoints
+			) do
+
+				if Value == Data then
+
+					table.remove(
+						Checkpoints,
+						Index
+					)
+
+					break
+				end
+			end
+
+			if SelectedCheckpoint == Data then
+				SelectedCheckpoint = nil
+			end
+
+			RefreshCP()
+
+			Status.Text =
+				"🗑 تم حذف الشكبوينت"
+		end)
+	end
+end
+
+--------------------------------------------------
+-- ADD CHECKPOINT
+--------------------------------------------------
+
+AddCP.Activated:Connect(function()
+
+	local Character =
+		LP.Character
+
+	local Root =
+		Character
+		and Character:FindFirstChild(
+			"HumanoidRootPart"
+		)
+
+	if not Root then
+
+		Status.Text =
+			"❌ الشخصية غير جاهزة"
+
+		return
+	end
+
+	local Number =
+		#Checkpoints + 1
+
+	local Data = {
+		Name = "Checkpoint "..Number,
+		CFrame = Root.CFrame
+	}
+
+	table.insert(
+		Checkpoints,
+		Data
+	)
+
+	SelectedCheckpoint =
+		Data
+
+	Status.Text =
+		"📍 تم حفظ "
+		..Data.Name
+
+	RefreshCP()
+end)
+
+--------------------------------------------------
+-- CHECKPOINT PORTAL
+--------------------------------------------------
+
+CPPortalButton.Activated:Connect(function()
+
+	if not SelectedCheckpoint then
+
+		Status.Text =
+			"❌ اختر شكبوينت أولاً"
+
+		return
+	end
+
+	if Placing then
+		return
+	end
+
+	Placing = true
+	PlacementMode = "CHECKPOINT"
+
+	Status.Text =
+		"📍 اضغط مكان البوابة"
+
+	local Connection
+
+	Connection =
+		UIS.InputBegan:Connect(function(
+			Input,
+			Processed
+		)
+
+		if Processed then
+			return
+		end
+
+		if Input.UserInputType
+			~= Enum.UserInputType.Touch
+			and Input.UserInputType
+			~= Enum.UserInputType.MouseButton1 then
+
+			return
+		end
+
+		local CF =
+			GetPosition(Input)
+
+		if not CF then
+			return
+		end
+
+		local Model,Touch =
+			MakePortal(
+				CF,
+				"CheckpointPortal"
+			)
+
+		ConnectPortal(
+			Touch,
+			SelectedCheckpoint.CFrame
+		)
+
+		Placing = false
+		PlacementMode = nil
+
+		Status.Text =
+			"📍 بوابة "
+			..SelectedCheckpoint.Name
+			.." جاهزة"
+
+		Connection:Disconnect()
+
+		task.delay(
+			PortalLifetime,
+			function()
+
+				if Model
+				and Model.Parent then
+
+					Model:Destroy()
+				end
+			end
+		)
+	end)
+end)
+
+--------------------------------------------------
+-- PORTAL GUN
+--------------------------------------------------
+
+local function CreateGun()
+
+	local Tool =
+		Instance.new("Tool")
+
+	Tool.Name =
+		"Cosmic Portal Gun"
+
+	Tool.RequiresHandle = true
+	Tool.CanBeDropped = false
+
+	--------------------------------------------------
+	-- HANDLE
+	--------------------------------------------------
+
+	local Handle =
+		Instance.new("Part")
+
+	Handle.Name =
+		"Handle"
+
+	Handle.Size =
+		Vector3.new(.42,1.05,.42)
+
+	Handle.Color =
+		Color3.fromRGB(35,38,40)
+
+	Handle.Material =
+		Enum.Material.Metal
+
+	Handle.CanCollide = false
+	Handle.CanTouch = false
+	Handle.CanQuery = false
+	Handle.Massless = true
+
+	Handle.Parent =
+		Tool
+
+	--------------------------------------------------
+	-- MAIN BODY
+	--------------------------------------------------
+
+	local Body =
+		Instance.new("Part")
+
+	Body.Name =
+		"CosmicBody"
+
+	Body.Size =
+		Vector3.new(.75,.55,1.55)
+
+	Body.Color =
+		Color3.fromRGB(95,100,105)
+
+	Body.Material =
+		Enum.Material.Metal
+
+	Body.CanCollide = false
+	Body.CanTouch = false
+	Body.CanQuery = false
+	Body.Massless = true
+
+	Body.Parent =
+		Tool
+
+	local BodyWeld =
+		Instance.new("Weld")
+
+	BodyWeld.Part0 =
+		Handle
+
+	BodyWeld.Part1 =
+		Body
+
+	BodyWeld.C0 =
+		CFrame.new(
+			0,
+			.48,
+			-.38
+		)
+
+	BodyWeld.Parent =
+		Body
+
+	--------------------------------------------------
+	-- BLACK TOP
+	--------------------------------------------------
+
+	local BlackTop =
+		Instance.new("Part")
+
+	BlackTop.Size =
+		Vector3.new(.58,.12,1.05)
+
+	BlackTop.Color =
+		BLACK
+
+	BlackTop.Material =
+		Enum.Material.Metal
+
+	BlackTop.CanCollide = false
+	BlackTop.CanTouch = false
+	BlackTop.CanQuery = false
+	BlackTop.Massless = true
+
+	BlackTop.Parent =
+		Tool
+
+	local BlackWeld =
+		Instance.new("Weld")
+
+	BlackWeld.Part0 =
+		Body
+
+	BlackWeld.Part1 =
+		BlackTop
+
+	BlackWeld.C0 =
+		CFrame.new(0,.34,0)
+
+	BlackWeld.Parent =
+		BlackTop
+
+	--------------------------------------------------
+	-- YELLOW CORE
+	--------------------------------------------------
+
+	local Core =
+		Instance.new("Part")
+
+	Core.Shape =
+		Enum.PartType.Ball
+
+	Core.Size =
+		Vector3.new(.42,.42,.42)
+
+	Core.Color =
+		YELLOW
+
+	Core.Material =
+		Enum.Material.Neon
+
+	Core.CanCollide = false
+	Core.CanTouch = false
+	Core.CanQuery = false
+	Core.Massless = true
+
+	Core.Parent =
+		Tool
+
+	local CoreWeld =
+		Instance.new("Weld")
+
+	CoreWeld.Part0 =
+		Body
+
+	CoreWeld.Part1 =
+		Core
+
+	CoreWeld.C0 =
+		CFrame.new(
+			0,
+			0,
+			-.82
+		)
+
+	CoreWeld.Parent =
+		Core
+
+	--------------------------------------------------
+	-- RED DETAIL
+	--------------------------------------------------
+
+	local Red =
+		Instance.new("Part")
+
+	Red.Size =
+		Vector3.new(.18,.18,.7)
+
+	Red.Color =
+		RED
+
+	Red.Material =
+		Enum.Material.Neon
+
+	Red.CanCollide = false
+	Red.CanTouch = false
+	Red.CanQuery = false
+	Red.Massless = true
+
+	Red.Parent =
+		Tool
+
+	local RedWeld =
+		Instance.new("Weld")
+
+	RedWeld.Part0 =
+		Body
+
+	RedWeld.Part1 =
+		Red
+
+	RedWeld.C0 =
+		CFrame.new(
+			.34,
+			0,
+			-.25
+		)
+
+	RedWeld.Parent =
+		Red
+
+	--------------------------------------------------
+	-- BLUE ENERGY
+	--------------------------------------------------
+
+	local Blue =
+		Instance.new("Part")
+
+	Blue.Shape =
+		Enum.PartType.Cylinder
+
+	Blue.Size =
+		Vector3.new(.22,.48,.48)
+
+	Blue.Color =
+		BLUE
+
+	Blue.Material =
+		Enum.Material.Neon
+
+	Blue.CanCollide = false
+	Blue.CanTouch = false
+	Blue.CanQuery = false
+	Blue.Massless = true
+
+	Blue.Parent =
+		Tool
+
+	local BlueWeld =
+		Instance.new("Weld")
+
+	BlueWeld.Part0 =
+		Body
+
+	BlueWeld.Part1 =
+		Blue
+
+	BlueWeld.C0 =
+		CFrame.new(
+			0,
+			0,
+			-1.05
+		)
+		* CFrame.Angles(
+			0,
+			math.rad(90),
+			0
+		)
+
+	BlueWeld.Parent =
+		Blue
+
+	--------------------------------------------------
+	-- WHITE RINGS
+	--------------------------------------------------
+
+	for Index = 1,2 do
+
+		local Ring =
+			Instance.new("Part")
+
+		Ring.Shape =
+			Enum.PartType.Cylinder
+
+		Ring.Size =
+			Vector3.new(
+				.08,
+				.7,
+				.7
+			)
+
+		Ring.Color =
+			WHITE
+
+		Ring.Material =
+			Enum.Material.Neon
+
+		Ring.CanCollide = false
+		Ring.CanTouch = false
+		Ring.CanQuery = false
+		Ring.Massless = true
+
+		Ring.Parent =
+			Tool
+
+		local W =
+			Instance.new("Weld")
+
+		W.Part0 =
+			Body
+
+		W.Part1 =
+			Ring
+
+		W.C0 =
+			CFrame.new(
+				0,
+				0,
+				-.55 - Index*.2
+			)
+			* CFrame.Angles(
+				0,
+				math.rad(90),
+				0
+			)
+
+		W.Parent =
+			Ring
+	end
+
+	--------------------------------------------------
+	-- TOOL GRIP
+	--------------------------------------------------
+
+	Tool.Grip =
+		CFrame.new(
+			0,
+			-.35,
+			-.1
+		)
+		* CFrame.Angles(
+			math.rad(-8),
+			0,
+			0
+		)
+
+	return Tool
+end
+
+--------------------------------------------------
+-- GIVE GUN
+--------------------------------------------------
+
+GunButton.Activated:Connect(function()
+
+	local Backpack =
+		LP:WaitForChild("Backpack")
+
+	local Character =
+		LP.Character
+
+	local Existing =
+		Backpack:FindFirstChild(
+			"Cosmic Portal Gun"
+		)
+		or (
+			Character
+			and Character:FindFirstChild(
+				"Cosmic Portal Gun"
+			)
+		)
+
+	if Existing then
+
+		Status.Text =
+			"🔫 السلاح موجود بالفعل"
+
+		return
+	end
+
+	local Gun =
+		CreateGun()
+
+	Gun.Parent =
+		Backpack
+
+	Status.Text =
+		"🔫 تم إعطاء Cosmic Portal Gun"
+end)
+
+--------------------------------------------------
+-- RAINBOW UI
+--------------------------------------------------
+
+local Hue = 0
+
+RunService.RenderStepped:Connect(function(Delta)
+
+	Hue =
+		(Hue + Delta * .2) % 1
+
+	ToggleStroke.Color =
+		Color3.fromHSV(
+			Hue,
+			.9,
+			1
+		)
+
+	Stroke.Color =
+		Color3.fromHSV(
+			(Hue + .3) % 1,
+			.8,
+			1
+		)
+end)
+
+--------------------------------------------------
+-- INITIALIZE
+--------------------------------------------------
+
+ShowPage(PortalPage)
+
+RefreshPlayers()
+
+RefreshCP()
+
+print(
+	"🌀 RICK PORTAL SYSTEM READY"
+)
